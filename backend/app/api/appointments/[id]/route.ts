@@ -30,7 +30,7 @@ export async function GET(
   try {
     const { id } = params
     
-    console.log(`[GET /api/appointments/[id]] Params recibidos:`, params)
+    console.log(`[GET /api/appointments/[id]] Params recibidos: `, params)
     console.log(`[GET /api/appointments/[id]] ID extraído:`, id)
     
     if (!id) {
