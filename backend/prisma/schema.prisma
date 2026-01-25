@@ -1,0 +1,354 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Professional {
+  id           String   @id @default(cuid())
+  slug         String   @unique
+  fullName     String
+  title        String   // "Psicóloga", "Psicólogo", etc.
+  modalities   String   // JSON array: ["online", "presencial"]
+  languages    String   // JSON array: ["español", "inglés", etc.]
+  specialties  String   // JSON array: ["ansiedad", "depresión", etc.]
+  approach     String   @default("")
+  isActive     Boolean  @default(true)
+
+  // NUEVO: contacto del profesional (para CTAs y wa.me)
+  contactEmail  String?
+  whatsappPhone String?
+
+  // NUEVO: foto y descripción del profesional
+  photo           String?  // URL o nombre del archivo de la foto
+  photoStorageKey String?  // Key en B2 storage (si aplica)
+  photoProvider   String   @default("local") // 'local' o 'b2'
+  description     String?  // Descripción de lo que realiza el profesional
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relaciones existentes
+  availabilityRules AvailabilityRule[]
+  exceptionDates    ExceptionDate[]
+  appointments      Appointment[]
+
+  // NUEVO: panel por profesional
+  user               User?
+  availabilityOverrides AvailabilityOverride[]
+  blockedSlots         BlockedSlot[]
+
+  // NUEVO: requests de baja/alta (target)
+  targetedChangeRequests ChangeRequest[] @relation("ChangeRequestTarget")
+
+  // NUEVO: gestión de pacientes
+  patients            Patient[]
+  slotHolds           SlotHold[]
+
+  @@map("professionals")
+}
+
+model User {
+  id             String   @id @default(cuid())
+  email          String   @unique
+  passwordHash   String
+  professionalId String   @unique
+  role           String   @default("PROFESSIONAL") // "PROFESSIONAL" | "ADMIN"
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  professional        Professional       @relation(fields: [professionalId], references: [id], onDelete: Cascade)
+  createdChangeRequests ChangeRequest[]  @relation("ChangeRequestCreatedBy")
+  votes               ChangeRequestVote[]
+  auditLogs           AuditLog[]
+
+  @@map("users")
+}
+
+model ChangeRequest {
+  id              String   @id @default(cuid())
+
+  // "ADD_PROFESSIONAL" | "REMOVE_PROFESSIONAL"
+  type            String
+  // "PENDING" | "APPROVED" | "REJECTED" | "EXECUTED"
+  status          String   @default("PENDING")
+
+  createdByUserId String
+  // Para ADD: JSON string con datos del profesional + credenciales (si querés)
+  payloadJson     String?
+
+  // Para REMOVE: quién se quiere dar de baja (soft delete => isActive=false)
+  targetProfessionalId String?
+
+  createdAt  DateTime @default(now())
+  decidedAt  DateTime?
+  executedAt DateTime?
+
+  createdBy User @relation("ChangeRequestCreatedBy", fields: [createdByUserId], references: [id], onDelete: Cascade)
+  targetProfessional Professional? @relation("ChangeRequestTarget", fields: [targetProfessionalId], references: [id], onDelete: SetNull)
+
+  votes ChangeRequestVote[]
+
+  @@index([status, createdAt])
+  @@map("change_requests")
+}
+
+model ChangeRequestVote {
+  id              String   @id @default(cuid())
+  changeRequestId String
+  voterUserId     String
+
+  // "APPROVE" | "REJECT"
+  decision  String
+  decidedAt DateTime @default(now())
+
+  changeRequest ChangeRequest @relation(fields: [changeRequestId], references: [id], onDelete: Cascade)
+  voter         User          @relation(fields: [voterUserId], references: [id], onDelete: Cascade)
+
+  @@unique([changeRequestId, voterUserId])
+  @@map("change_request_votes")
+}
+
+model AvailabilityRule {
+  id             String   @id @default(cuid())
+  professionalId String
+  dayOfWeek      Int      // 0 = domingo, 1 = lunes, ..., 6 = sábado
+  startTime      String   // "09:00"
+  endTime        String   // "18:00"
+  slotMinutes    Int      @default(50)
+  bufferMinutes  Int      @default(10)
+  modality       String?  // null = ambas, "online" o "presencial"
+  locationLabel  String?  // "CABA", "Zona Norte", etc.
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  professional Professional @relation(fields: [professionalId], references: [id], onDelete: Cascade)
+
+  @@map("availability_rules")
+}
+
+model AvailabilityOverride {
+  id             String   @id @default(cuid())
+  professionalId String
+  date           DateTime // fecha (guardala a medianoche local o normalizada)
+  isUnavailable  Boolean  @default(false) // Si true, día completo no disponible (ignora ranges)
+
+  slotMinutes   Int @default(50)
+  bufferMinutes Int @default(10)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  professional Professional @relation(fields: [professionalId], references: [id], onDelete: Cascade)
+  ranges       AvailabilityOverrideRange[]
+
+  @@unique([professionalId, date])
+  @@map("availability_overrides")
+}
+
+model AvailabilityOverrideRange {
+  id          String @id @default(cuid())
+  overrideId  String
+
+  startTime   String // "09:00"
+  endTime     String // "13:30"
+  modality    String?
+  locationLabel String?
+
+  override AvailabilityOverride @relation(fields: [overrideId], references: [id], onDelete: Cascade)
+
+  @@map("availability_override_ranges")
+}
+
+model BlockedSlot {
+  id             String   @id @default(cuid())
+  professionalId String
+  startAt        DateTime
+  endAt          DateTime
+  reason         String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  professional Professional @relation(fields: [professionalId], references: [id], onDelete: Cascade)
+
+  @@unique([professionalId, startAt, endAt])
+  @@index([professionalId, startAt])
+  @@map("blocked_slots")
+}
+
+model ExceptionDate {
+  id             String   @id @default(cuid())
+  professionalId String
+  date           DateTime // Solo fecha (sin hora)
+  isUnavailable  Boolean  @default(true)
+  startTime      String?
+  endTime        String?
+  note           String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  professional Professional @relation(fields: [professionalId], references: [id], onDelete: Cascade)
+
+  @@unique([professionalId, date])
+  @@map("exception_dates")
+}
+
+model Appointment {
+  id                String   @id @default(cuid())
+  professionalId    String
+  startAt           DateTime
+  endAt             DateTime
+  modality          String
+  locationLabel     String?
+  clientName        String
+  clientEmail       String
+  clientPhone       String
+  status            String   @default("PENDING_CONFIRMATION") // PENDING_CONFIRMATION, CONFIRMED, CANCELLED
+  confirmationToken String   @unique
+  cancelToken       String   @unique
+
+  // Confirmación por profesional
+  confirmedAt       DateTime?
+  confirmedBy       String?   // ID del usuario que confirmó
+
+  // Cancelación
+  cancelledBy       String?   // CLIENT | PROFESSIONAL | SYSTEM
+  cancelledAt       DateTime?
+  cancellationReason String?  // Motivo de cancelación
+
+  // NUEVO: vinculación con paciente
+  patientId String?  // Opcional: si el turno está asociado a un paciente
+  source    String   @default("PUBLIC") // "PUBLIC" | "STAFF" | "HOLD_CONVERTED"
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  professional  Professional     @relation(fields: [professionalId], references: [id], onDelete: Cascade)
+  patient       Patient?          @relation(fields: [patientId], references: [id], onDelete: SetNull)
+  notifications NotificationLog[]
+
+  @@index([professionalId, startAt])
+  @@index([status, startAt])
+  @@index([patientId])
+  @@map("appointments")
+}
+
+model NotificationLog {
+  id             String   @id @default(cuid())
+  appointmentId  String
+  type           String   // EMAIL_CONFIRM, WA_CONFIRM, EMAIL_REMINDER, WA_REMINDER, EMAIL_CANCEL, WA_CANCEL
+  sentAt         DateTime @default(now())
+  status         String   @default("SENT") // SENT, FAILED
+  payloadPreview String?
+
+  appointment Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+
+  @@map("notification_logs")
+}
+
+// NUEVO: Modelos para gestión de pacientes
+model Patient {
+  id                    String   @id @default(cuid())
+  professionalId        String
+  firstName             String
+  lastName              String
+  birthDate             DateTime
+  address               String
+  city                  String
+  province              String
+  emergencyName         String
+  emergencyRole         String   // "madre", "padre", "pareja", "amigo", etc.
+  emergencyPhone        String
+  hasInsurance          Boolean  @default(false)
+  insuranceName         String?
+  insuranceCardNumber   String?
+  insuranceCardFile     String?  // Nombre del archivo del carnet (si se subió)
+  lastVisitAt           DateTime?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  professional Professional @relation(fields: [professionalId], references: [id], onDelete: Cascade)
+  files        PatientFile[]
+  notes        PatientNote[]
+  appointments Appointment[]
+  slotHolds    SlotHold[]
+
+  @@index([professionalId])
+  @@index([professionalId, lastName, firstName])
+  @@map("patients")
+}
+
+model PatientFile {
+  id              String   @id @default(cuid())
+  patientId       String
+  originalName    String
+  storageName     String   // Key en el storage (B2 o local path)
+  storageUrl      String?  // URL directa al archivo (para B2)
+  storageProvider String   @default("local") // 'local' o 'b2'
+  mimeType        String
+  size            Int      // bytes
+  createdAt       DateTime @default(now())
+
+  patient Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  @@index([patientId])
+  @@map("patient_files")
+}
+
+model PatientNote {
+  id        String   @id @default(cuid())
+  patientId String
+  content   String   // Texto de la nota (sanitizado)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  patient Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  @@index([patientId])
+  @@map("patient_notes")
+}
+
+model SlotHold {
+  id             String   @id @default(cuid())
+  professionalId String
+  patientId      String
+  startAt        DateTime
+  endAt          DateTime
+  status         String   @default("HOLD") // "HOLD" | "CONFIRMED" | "CANCELLED"
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  professional Professional @relation(fields: [professionalId], references: [id], onDelete: Cascade)
+  patient      Patient      @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  @@index([professionalId, startAt])
+  @@index([patientId])
+  @@index([status, startAt])
+  @@map("slot_holds")
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String
+  action    String   // "CREATE_PATIENT", "UPDATE_PATIENT", "DELETE_PATIENT", "UPLOAD_FILE", "DELETE_FILE", etc.
+  entity    String   // "PATIENT", "PATIENT_FILE", "SLOT_HOLD", etc.
+  entityId  String?
+  metadata  String?  // JSON con detalles adicionales
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([entity, entityId])
+  @@map("audit_logs")
+}
