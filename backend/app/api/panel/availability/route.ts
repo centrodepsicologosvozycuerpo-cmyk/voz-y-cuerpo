@@ -13,6 +13,22 @@ const ruleSchema = z.object({
   locationLabel: z.string().optional(),
 })
 
+// Convierte "HH:MM" a minutos desde medianoche
+function timeToMinutes(time: string): number {
+  const [hours, minutes] = time.split(':').map(Number)
+  return hours * 60 + minutes
+}
+
+// Verifica si dos rangos se solapan
+function rangesOverlap(
+  start1: number,
+  end1: number,
+  start2: number,
+  end2: number
+): boolean {
+  return start1 < end2 && end1 > start2
+}
+
 export async function GET() {
   try {
     const user = await requireAuth()
@@ -34,25 +50,45 @@ export async function POST(request: Request) {
     const body = await request.json()
     const validated = ruleSchema.parse(body)
 
-    // LOG TEMPORAL: Verificar payload y professionalId
-    console.log('[DEBUG POST /api/panel/availability]')
-    console.log('  Payload recibido:', JSON.stringify(validated, null, 2))
-    console.log('  User professionalId:', user.professionalId)
-    console.log('  User email:', user.email)
+    const newStart = timeToMinutes(validated.startTime)
+    const newEnd = timeToMinutes(validated.endTime)
+
+    // Validar que el horario de inicio sea menor al de fin
+    if (newStart >= newEnd) {
+      return NextResponse.json(
+        { error: 'El horario de inicio debe ser anterior al horario de fin' },
+        { status: 400 }
+      )
+    }
+
+    // Obtener reglas existentes del mismo día
+    const existingRules = await prisma.availabilityRule.findMany({
+      where: {
+        professionalId: user.professionalId,
+        dayOfWeek: validated.dayOfWeek,
+      },
+    })
+
+    // Verificar solapamiento con reglas existentes
+    for (const existing of existingRules) {
+      const existingStart = timeToMinutes(existing.startTime)
+      const existingEnd = timeToMinutes(existing.endTime)
+
+      if (rangesOverlap(newStart, newEnd, existingStart, existingEnd)) {
+        return NextResponse.json(
+          { 
+            error: `El rango ${validated.startTime}-${validated.endTime} se solapa con el rango existente ${existing.startTime}-${existing.endTime}` 
+          },
+          { status: 400 }
+        )
+      }
+    }
 
     const rule = await prisma.availabilityRule.create({
       data: {
         professionalId: user.professionalId,
         ...validated,
       },
-    })
-
-    console.log('  Regla creada:', {
-      id: rule.id,
-      professionalId: rule.professionalId,
-      dayOfWeek: rule.dayOfWeek,
-      startTime: rule.startTime,
-      endTime: rule.endTime,
     })
 
     return NextResponse.json({ rule })

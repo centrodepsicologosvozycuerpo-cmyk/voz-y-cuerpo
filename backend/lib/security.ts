@@ -5,7 +5,10 @@ import { NextResponse } from 'next/server'
 
 /**
  * Verifica que el usuario esté autenticado y obtiene su información
- * Soporta autenticación por sesión NextAuth o por header X-Professional-Id
+ * Soporta autenticación por:
+ * - Sesión NextAuth
+ * - Header Authorization: Bearer {token}
+ * - Header X-Professional-Id
  */
 export async function requireAuth(request?: Request) {
   // Primero intentar con sesión NextAuth
@@ -24,9 +27,28 @@ export async function requireAuth(request?: Request) {
     }
   }
 
-  // Si no hay sesión, intentar con header X-Professional-Id (para backoffice)
   if (request) {
+    // Intentar con Bearer token (backoffice)
+    const authHeader = request.headers.get('Authorization')
+    
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.substring(7) // Remover "Bearer "
+      
+      const user = await prisma.user.findUnique({
+        where: { id: token },
+        include: {
+          professional: true,
+        },
+      })
+
+      if (user && user.professional) {
+        return user
+      }
+    }
+
+    // También intentar con header X-Professional-Id (compatibilidad)
     const professionalId = request.headers.get('X-Professional-Id')
+    
     if (professionalId) {
       const user = await prisma.user.findFirst({
         where: { professionalId },

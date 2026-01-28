@@ -12,6 +12,22 @@ const updateSchema = z.object({
   locationLabel: z.string().optional().nullable(),
 })
 
+// Convierte "HH:MM" a minutos desde medianoche
+function timeToMinutes(time: string): number {
+  const [hours, minutes] = time.split(':').map(Number)
+  return hours * 60 + minutes
+}
+
+// Verifica si dos rangos se solapan
+function rangesOverlap(
+  start1: number,
+  end1: number,
+  start2: number,
+  end2: number
+): boolean {
+  return start1 < end2 && end1 > start2
+}
+
 export async function PATCH(
   request: Request,
   { params }: { params: { id: string } }
@@ -21,35 +37,56 @@ export async function PATCH(
     const body = await request.json()
     const validated = updateSchema.parse(body)
 
-    // LOG TEMPORAL: Verificar payload y professionalId
-    console.log('[DEBUG PATCH /api/panel/availability/' + params.id + ']')
-    console.log('  Payload recibido:', JSON.stringify(validated, null, 2))
-    console.log('  User professionalId:', user.professionalId)
-    console.log('  Rule ID:', params.id)
-
     // Verificar que la regla pertenece al profesional
     const rule = await prisma.availabilityRule.findUnique({
       where: { id: params.id },
     })
 
     if (!rule || rule.professionalId !== user.professionalId) {
-      console.log('  ERROR: Regla no encontrada o no pertenece al profesional')
-      console.log('    Rule professionalId:', rule?.professionalId)
-      console.log('    User professionalId:', user.professionalId)
       return NextResponse.json({ error: 'No autorizado' }, { status: 403 })
+    }
+
+    // Calcular los valores finales (actualizados o existentes)
+    const finalStartTime = validated.startTime ?? rule.startTime
+    const finalEndTime = validated.endTime ?? rule.endTime
+    const newStart = timeToMinutes(finalStartTime)
+    const newEnd = timeToMinutes(finalEndTime)
+
+    // Validar que el horario de inicio sea menor al de fin
+    if (newStart >= newEnd) {
+      return NextResponse.json(
+        { error: 'El horario de inicio debe ser anterior al horario de fin' },
+        { status: 400 }
+      )
+    }
+
+    // Obtener otras reglas del mismo día (excluyendo la actual)
+    const existingRules = await prisma.availabilityRule.findMany({
+      where: {
+        professionalId: user.professionalId,
+        dayOfWeek: rule.dayOfWeek,
+        id: { not: params.id },
+      },
+    })
+
+    // Verificar solapamiento con otras reglas
+    for (const existing of existingRules) {
+      const existingStart = timeToMinutes(existing.startTime)
+      const existingEnd = timeToMinutes(existing.endTime)
+
+      if (rangesOverlap(newStart, newEnd, existingStart, existingEnd)) {
+        return NextResponse.json(
+          { 
+            error: `El rango ${finalStartTime}-${finalEndTime} se solapa con el rango existente ${existing.startTime}-${existing.endTime}` 
+          },
+          { status: 400 }
+        )
+      }
     }
 
     const updated = await prisma.availabilityRule.update({
       where: { id: params.id },
       data: validated,
-    })
-
-    console.log('  Regla actualizada:', {
-      id: updated.id,
-      professionalId: updated.professionalId,
-      dayOfWeek: updated.dayOfWeek,
-      startTime: updated.startTime,
-      endTime: updated.endTime,
     })
 
     return NextResponse.json({ rule: updated })

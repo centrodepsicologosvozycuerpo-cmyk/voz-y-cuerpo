@@ -8,6 +8,8 @@ import { differenceInYears } from 'date-fns'
 const updatePatientSchema = z.object({
   firstName: z.string().min(1).optional(),
   lastName: z.string().min(1).optional(),
+  email: z.string().email('Email inválido').optional().nullable().or(z.literal('')),
+  phone: z.string().optional().nullable(),
   birthDate: z.string().datetime().optional(),
   address: z.string().min(1).optional(),
   city: z.string().min(1).optional(),
@@ -44,12 +46,7 @@ export async function GET(
 
     const age = differenceInYears(new Date(), new Date(patient.birthDate))
 
-    // Obtener archivos y notas
-    const files = await prisma.patientFile.findMany({
-      where: { patientId: patient.id },
-      orderBy: { createdAt: 'desc' },
-    })
-
+    // Obtener notas
     const notes = await prisma.patientNote.findMany({
       where: { patientId: patient.id },
       orderBy: { createdAt: 'desc' },
@@ -68,7 +65,6 @@ export async function GET(
       patient: {
         ...patient,
         age,
-        files,
         notes,
         slotHolds,
       },
@@ -95,6 +91,8 @@ export async function PUT(
     const updateData: any = {}
     if (validated.firstName !== undefined) updateData.firstName = validated.firstName
     if (validated.lastName !== undefined) updateData.lastName = validated.lastName
+    if (validated.email !== undefined) updateData.email = validated.email || null
+    if (validated.phone !== undefined) updateData.phone = validated.phone || null
     if (validated.birthDate !== undefined) updateData.birthDate = new Date(validated.birthDate)
     if (validated.address !== undefined) updateData.address = validated.address
     if (validated.city !== undefined) updateData.city = validated.city

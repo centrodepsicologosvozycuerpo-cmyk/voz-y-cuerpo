@@ -9,6 +9,8 @@ import { Label } from '@/components/ui/label'
 import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import { API_URL } from '@/lib/api'
+import { authFetch } from '@/lib/auth-client'
+import { useToast } from '@/hooks/use-toast'
 
 interface Patient {
   id: string
@@ -20,13 +22,15 @@ export function ReservarHorarioContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const patientId = searchParams.get('id')
+  const { toast } = useToast()
 
   const [patient, setPatient] = useState<Patient | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [formData, setFormData] = useState({
-    startAt: '',
-    endAt: '',
+    date: '',
+    startTime: '',
+    endTime: '',
     recurrence: 'single' as 'single' | 'weekly',
     weeks: 1,
   })
@@ -41,7 +45,7 @@ export function ReservarHorarioContent() {
 
   const loadPatient = async () => {
     try {
-      const res = await fetch(`${API_URL}/api/patients/${patientId}`)
+      const res = await authFetch(`${API_URL}/api/patients/${patientId}`)
       if (res.ok) {
         const data = await res.json()
         setPatient(data.patient)
@@ -58,46 +62,51 @@ export function ReservarHorarioContent() {
     setSaving(true)
 
     try {
+      // Combinar fecha + hora para crear los datetime
+      const startAt = new Date(`${formData.date}T${formData.startTime}:00`)
+      const endAt = new Date(`${formData.date}T${formData.endTime}:00`)
+
       const payload = {
         patientId,
-        startAt: new Date(formData.startAt).toISOString(),
-        endAt: formData.endAt ? new Date(formData.endAt).toISOString() : undefined,
+        startAt: startAt.toISOString(),
+        endAt: endAt.toISOString(),
         recurrence: formData.recurrence,
         weeks: formData.recurrence === 'weekly' ? formData.weeks : undefined,
       }
 
-      const res = await fetch(`${API_URL}/api/holds`, {
+      const res = await authFetch(`${API_URL}/api/holds`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       })
 
       if (res.ok) {
+        toast({ title: 'Reserva creada correctamente' })
         router.push(`/panel/pacientes/detalle/?id=${patientId}`)
       } else {
         const error = await res.json()
-        alert(error.error || 'Error al crear reserva')
+        toast({ title: error.error || 'Error al crear reserva', variant: 'destructive' })
       }
     } catch (error) {
       console.error('Error creating hold:', error)
-      alert('Error al crear reserva')
+      toast({ title: 'Error al crear reserva', variant: 'destructive' })
     } finally {
       setSaving(false)
     }
   }
 
-  const handleStartAtChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const startAt = e.target.value
-    setFormData({ ...formData, startAt })
+  const handleStartTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const startTime = e.target.value
+    setFormData(prev => ({ ...prev, startTime }))
     
-    if (startAt && !formData.endAt) {
-      const startDate = new Date(startAt)
-      const endDate = new Date(startDate.getTime() + 50 * 60 * 1000)
-      setFormData(prev => ({
-        ...prev,
-        startAt,
-        endAt: endDate.toISOString().slice(0, 16),
-      }))
+    // Auto-calcular hora de fin (50 minutos después)
+    if (startTime) {
+      const [hours, minutes] = startTime.split(':').map(Number)
+      const totalMinutes = hours * 60 + minutes + 50
+      const endHours = Math.floor(totalMinutes / 60) % 24
+      const endMinutes = totalMinutes % 60
+      const endTime = `${endHours.toString().padStart(2, '0')}:${endMinutes.toString().padStart(2, '0')}`
+      setFormData(prev => ({ ...prev, startTime, endTime }))
     }
   }
 
@@ -149,27 +158,40 @@ export function ReservarHorarioContent() {
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <Label htmlFor="startAt">Fecha y Hora de Inicio *</Label>
+              <Label htmlFor="date">Fecha *</Label>
               <Input
-                id="startAt"
-                type="datetime-local"
+                id="date"
+                type="date"
                 required
-                value={formData.startAt}
-                onChange={handleStartAtChange}
+                value={formData.date}
+                onChange={(e) => setFormData({ ...formData, date: e.target.value })}
               />
             </div>
 
-            <div>
-              <Label htmlFor="endAt">Fecha y Hora de Fin</Label>
-              <Input
-                id="endAt"
-                type="datetime-local"
-                value={formData.endAt}
-                onChange={(e) => setFormData({ ...formData, endAt: e.target.value })}
-              />
-              <p className="text-sm text-muted-foreground mt-1">
-                Si no se especifica, se calculará automáticamente (50 minutos después del inicio)
-              </p>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="startTime">Hora de Inicio *</Label>
+                <Input
+                  id="startTime"
+                  type="time"
+                  required
+                  value={formData.startTime}
+                  onChange={handleStartTimeChange}
+                />
+              </div>
+              <div>
+                <Label htmlFor="endTime">Hora de Fin *</Label>
+                <Input
+                  id="endTime"
+                  type="time"
+                  required
+                  value={formData.endTime}
+                  onChange={(e) => setFormData({ ...formData, endTime: e.target.value })}
+                />
+                <p className="text-sm text-muted-foreground mt-1">
+                  Se calcula automáticamente (+50 min)
+                </p>
+              </div>
             </div>
 
             <div>
@@ -197,7 +219,7 @@ export function ReservarHorarioContent() {
                   onChange={(e) => setFormData({ ...formData, weeks: parseInt(e.target.value) || 1 })}
                 />
                 <p className="text-sm text-muted-foreground mt-1">
-                  Se crearán reservas para las próximas {formData.weeks} semanas
+                  Se crearán {formData.weeks} reservas (una por semana, mismo día y horario)
                 </p>
               </div>
             )}
@@ -208,7 +230,7 @@ export function ReservarHorarioContent() {
                   Cancelar
                 </Button>
               </Link>
-              <Button type="submit" disabled={saving}>
+              <Button type="submit" disabled={saving || !formData.date || !formData.startTime || !formData.endTime}>
                 {saving ? 'Guardando...' : 'Crear Reserva'}
               </Button>
             </div>

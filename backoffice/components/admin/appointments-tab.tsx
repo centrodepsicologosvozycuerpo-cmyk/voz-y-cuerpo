@@ -9,6 +9,7 @@ import { utcToZonedTime } from 'date-fns-tz'
 import { Chip } from '@/components/ui/chip'
 import type { Appointment, Professional } from '@/lib/types'
 import { API_URL } from '@/lib/api'
+import { useToast } from '@/hooks/use-toast'
 
 const TIMEZONE = 'America/Argentina/Buenos_Aires'
 
@@ -20,6 +21,7 @@ interface AppointmentsTabProps {
 }
 
 export function AppointmentsTab({ appointments, onUpdate }: AppointmentsTabProps) {
+  const { toast } = useToast()
   const [loading, setLoading] = useState<string | null>(null)
 
   const handleCancel = async (appointmentId: string) => {
@@ -42,8 +44,9 @@ export function AppointmentsTab({ appointments, onUpdate }: AppointmentsTabProps
         apt.id === appointmentId ? { ...apt, status: 'CANCELLED' as const } : apt
       )
       onUpdate(updated)
+      toast({ title: 'Turno cancelado correctamente' })
     } catch (error) {
-      alert('Error al cancelar el turno')
+      toast({ title: 'Error al cancelar el turno', variant: 'destructive' })
     } finally {
       setLoading(null)
     }

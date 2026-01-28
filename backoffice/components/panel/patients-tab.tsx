@@ -11,6 +11,8 @@ import es from 'date-fns/locale/es'
 import { Plus, Search, Edit, Trash2, FileText, Calendar } from 'lucide-react'
 import Link from 'next/link'
 import { API_URL } from '@/lib/api'
+import { authFetch } from '@/lib/auth-client'
+import { useToast } from '@/hooks/use-toast'
 
 interface Patient {
   id: string
@@ -32,6 +34,7 @@ interface PatientsTabProps {
 }
 
 export function PatientsTab({ professionalId }: PatientsTabProps) {
+  const { toast } = useToast()
   const [patients, setPatients] = useState<Patient[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
@@ -49,11 +52,7 @@ export function PatientsTab({ professionalId }: PatientsTabProps) {
       if (filterHasInsurance !== 'all') params.append('hasInsurance', filterHasInsurance)
       if (filterFrequent !== 'all') params.append('isFrequent', filterFrequent)
 
-      const res = await fetch(`${API_URL}/api/patients?${params.toString()}`, {
-        headers: {
-          'X-Professional-Id': professionalId,
-        },
-      })
+      const res = await authFetch(`${API_URL}/api/patients?${params.toString()}`)
       if (res.ok) {
         const data = await res.json()
         setPatients(data.patients || [])
@@ -71,22 +70,20 @@ export function PatientsTab({ professionalId }: PatientsTabProps) {
     }
 
     try {
-      const res = await fetch(`${API_URL}/api/patients/${patientId}`, {
+      const res = await authFetch(`${API_URL}/api/patients/${patientId}`, {
         method: 'DELETE',
-        headers: {
-          'X-Professional-Id': professionalId,
-        },
       })
 
       if (res.ok) {
+        toast({ title: 'Paciente eliminado correctamente' })
         loadPatients()
       } else {
         const data = await res.json()
-        alert(data.error || 'Error al eliminar paciente')
+        toast({ title: data.error || 'Error al eliminar paciente', variant: 'destructive' })
       }
     } catch (error) {
       console.error('Error deleting patient:', error)
-      alert('Error al eliminar paciente')
+      toast({ title: 'Error al eliminar paciente', variant: 'destructive' })
     }
   }
 

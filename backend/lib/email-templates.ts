@@ -272,57 +272,6 @@ export function patientCancellationEmail(data: {
   }
 }
 
-/**
- * Email: Recordatorio de turno
- */
-export function patientReminderEmail(data: {
-  patientName: string
-  professionalName: string
-  professionalPhone?: string
-  appointmentDate: Date
-  modality: string
-  locationLabel?: string
-  hoursBefore: number
-  cancelUrl: string
-}): { subject: string; html: string } {
-
-  const content = `
-    <h1 style="${styles.title}">⏰ Recordatorio</h1>
-    <p style="${styles.subtitle}">
-      Hola ${data.patientName}, tu turno es en ${data.hoursBefore} horas.
-    </p>
-    
-    <hr style="${styles.divider}">
-    
-    <p style="${styles.label}">Profesional</p>
-    <p style="${styles.value}">${data.professionalName}</p>
-    
-    <p style="${styles.label}">Fecha</p>
-    <p style="${styles.value}">${formatDate(data.appointmentDate)}</p>
-    
-    <p style="${styles.label}">Hora</p>
-    <p style="${styles.value}">${formatTime(data.appointmentDate)} hs</p>
-    
-    <p style="${styles.label}">Modalidad</p>
-    <p style="${styles.value}">${data.modality === 'online' ? '💻 Online' : '🏢 Presencial'}${data.locationLabel ? ` — ${data.locationLabel}` : ''}</p>
-    
-    <hr style="${styles.divider}">
-    
-    <p style="text-align: center; font-size: 13px; color: #888; margin-bottom: 16px;">
-      ¿No podés asistir?
-    </p>
-    
-    <div style="text-align: center;">
-      <a href="${data.cancelUrl}" style="${styles.button} ${styles.buttonDanger}">Cancelar turno</a>
-    </div>
-  `
-
-  return {
-    subject: `⏰ Recordatorio: Tu turno es en ${data.hoursBefore} horas`,
-    html: baseTemplate(content),
-  }
-}
-
 // ============================================
 // TEMPLATES PARA PROFESIONALES
 // ============================================

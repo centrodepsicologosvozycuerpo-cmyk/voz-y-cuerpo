@@ -8,7 +8,6 @@ import {
   patientPreConfirmationEmail,
   patientConfirmationEmail,
   patientCancellationEmail,
-  patientReminderEmail,
   professionalNewBookingEmail,
   professionalCancellationEmail,
 } from './email-templates'
@@ -227,46 +226,6 @@ export async function sendCancellationEmailToProfessional(
       type: 'EMAIL_PROFESSIONAL_CANCEL',
       status: sent ? 'SENT' : 'FAILED',
       payloadPreview: JSON.stringify({ to: professional.user.email, subject }),
-    },
-  })
-}
-
-/**
- * Envía email de recordatorio al paciente
- */
-export async function sendReminderEmail(appointment: Appointment, hoursBefore: number) {
-  const professional = await prisma.professional.findUnique({
-    where: { id: appointment.professionalId },
-  })
-
-  if (!professional) return
-
-  const localStart = utcToZonedTime(appointment.startAt, TIMEZONE)
-  const cancelUrl = `${APP_URL}/turnos/cancelar?token=${appointment.cancelToken}`
-
-  const { subject, html } = patientReminderEmail({
-    patientName: appointment.clientName,
-    professionalName: professional.fullName,
-    professionalPhone: professional.whatsappPhone || undefined,
-    appointmentDate: localStart,
-    modality: appointment.modality,
-    locationLabel: appointment.locationLabel || undefined,
-    hoursBefore,
-    cancelUrl,
-  })
-
-  const sent = await sendEmail({
-    to: appointment.clientEmail,
-    subject,
-    html,
-  })
-
-  await prisma.notificationLog.create({
-    data: {
-      appointmentId: appointment.id,
-      type: `EMAIL_REMINDER_${hoursBefore}H`,
-      status: sent ? 'SENT' : 'FAILED',
-      payloadPreview: JSON.stringify({ to: appointment.clientEmail, subject }),
     },
   })
 }

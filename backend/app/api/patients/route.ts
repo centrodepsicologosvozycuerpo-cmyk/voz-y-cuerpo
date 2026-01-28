@@ -8,6 +8,8 @@ import { differenceInYears } from 'date-fns'
 const createPatientSchema = z.object({
   firstName: z.string().min(1, 'El nombre es requerido'),
   lastName: z.string().min(1, 'El apellido es requerido'),
+  email: z.string().email('Email inválido').optional().or(z.literal('')),
+  phone: z.string().optional(),
   birthDate: z.string().datetime(),
   address: z.string().min(1, 'La dirección es requerida'),
   city: z.string().min(1, 'La localidad es requerida'),
@@ -44,7 +46,7 @@ export async function GET(request: Request) {
     if (!professionalId) {
       // Intentar con requireAuth para compatibilidad
       try {
-        const user = await requireAuth()
+        const user = await requireAuth(request)
         const search = searchParams.get('search') || ''
         const hasInsuranceParam = searchParams.get('hasInsurance')
         const isFrequentParam = searchParams.get('isFrequent')
@@ -224,6 +226,8 @@ export async function POST(request: Request) {
         professionalId: user.professionalId,
         firstName: validated.firstName,
         lastName: validated.lastName,
+        email: validated.email || null,
+        phone: validated.phone || null,
         birthDate: new Date(validated.birthDate),
         address: validated.address,
         city: validated.city,

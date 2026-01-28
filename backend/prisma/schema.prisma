@@ -42,7 +42,6 @@ model Professional {
   // NUEVO: panel por profesional
   user               User?
   availabilityOverrides AvailabilityOverride[]
-  blockedSlots         BlockedSlot[]
 
   // NUEVO: requests de baja/alta (target)
   targetedChangeRequests ChangeRequest[] @relation("ChangeRequestTarget")
@@ -168,23 +167,6 @@ model AvailabilityOverrideRange {
   @@map("availability_override_ranges")
 }
 
-model BlockedSlot {
-  id             String   @id @default(cuid())
-  professionalId String
-  startAt        DateTime
-  endAt          DateTime
-  reason         String?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  professional Professional @relation(fields: [professionalId], references: [id], onDelete: Cascade)
-
-  @@unique([professionalId, startAt, endAt])
-  @@index([professionalId, startAt])
-  @@map("blocked_slots")
-}
-
 model ExceptionDate {
   id             String   @id @default(cuid())
   professionalId String
@@ -262,6 +244,8 @@ model Patient {
   professionalId        String
   firstName             String
   lastName              String
+  email                 String?  // Email del paciente (opcional, para notificaciones)
+  phone                 String?  // Teléfono del paciente
   birthDate             DateTime
   address               String
   city                  String
@@ -278,7 +262,6 @@ model Patient {
   updatedAt             DateTime @updatedAt
 
   professional Professional @relation(fields: [professionalId], references: [id], onDelete: Cascade)
-  files        PatientFile[]
   notes        PatientNote[]
   appointments Appointment[]
   slotHolds    SlotHold[]
@@ -286,23 +269,6 @@ model Patient {
   @@index([professionalId])
   @@index([professionalId, lastName, firstName])
   @@map("patients")
-}
-
-model PatientFile {
-  id              String   @id @default(cuid())
-  patientId       String
-  originalName    String
-  storageName     String   // Key en el storage (B2 o local path)
-  storageUrl      String?  // URL directa al archivo (para B2)
-  storageProvider String   @default("local") // 'local' o 'b2'
-  mimeType        String
-  size            Int      // bytes
-  createdAt       DateTime @default(now())
-
-  patient Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
-
-  @@index([patientId])
-  @@map("patient_files")
 }
 
 model PatientNote {

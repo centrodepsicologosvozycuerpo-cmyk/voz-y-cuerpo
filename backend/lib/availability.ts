@@ -44,11 +44,6 @@ export async function getAvailableSlots(
             ranges: true,
           },
         },
-        blockedSlots: {
-          where: {
-            startAt: { gte: from, lte: to },
-          },
-        },
         appointments: {
           where: {
             status: { in: ['PENDING_CONFIRMATION', 'CONFIRMED'] },
@@ -72,7 +67,6 @@ export async function getAvailableSlots(
     const availabilityRules = professional.availabilityRules || []
     const exceptionDates = professional.exceptionDates || []
     const availabilityOverrides = professional.availabilityOverrides || []
-    const blockedSlots = professional.blockedSlots || []
     const appointments = professional.appointments || []
     const slotHolds = professional.slotHolds || []
 
@@ -138,16 +132,6 @@ export async function getAvailableSlots(
               break
             }
 
-            const isBlocked = blockedSlots.some((block) => {
-              const blockStart = utcToZonedTime(block.startAt, TIMEZONE)
-              const blockEnd = utcToZonedTime(block.endAt, TIMEZONE)
-              return (
-                (slotStart >= blockStart && slotStart < blockEnd) ||
-                (slotEndTime > blockStart && slotEndTime <= blockEnd) ||
-                (slotStart <= blockStart && slotEndTime >= blockEnd)
-              )
-            })
-
             const isOccupied = appointments.some((apt) => {
               const aptStart = utcToZonedTime(apt.startAt, TIMEZONE)
               const aptEnd = utcToZonedTime(apt.endAt, TIMEZONE)
@@ -171,7 +155,7 @@ export async function getAvailableSlots(
 
             const isNotInPast = slotStart.getTime() > now.getTime()
             
-            if (!isBlocked && !isOccupied && !isReserved && isNotInPast) {
+            if (!isOccupied && !isReserved && isNotInPast) {
               slots.push({
                 startAt: zonedTimeToUtc(slotStart, TIMEZONE),
                 endAt: zonedTimeToUtc(slotEndTime, TIMEZONE),
@@ -225,16 +209,6 @@ export async function getAvailableSlots(
               break
             }
 
-            const isBlocked = blockedSlots.some((block) => {
-              const blockStart = utcToZonedTime(block.startAt, TIMEZONE)
-              const blockEnd = utcToZonedTime(block.endAt, TIMEZONE)
-              return (
-                (slotStart >= blockStart && slotStart < blockEnd) ||
-                (slotEndTime > blockStart && slotEndTime <= blockEnd) ||
-                (slotStart <= blockStart && slotEndTime >= blockEnd)
-              )
-            })
-
             const isOccupied = appointments.some((apt) => {
               const aptStart = utcToZonedTime(apt.startAt, TIMEZONE)
               const aptEnd = utcToZonedTime(apt.endAt, TIMEZONE)
@@ -258,7 +232,7 @@ export async function getAvailableSlots(
 
             const isNotInPast = slotStart.getTime() > now.getTime()
             
-            if (!isBlocked && !isOccupied && !isReserved && isNotInPast) {
+            if (!isOccupied && !isReserved && isNotInPast) {
               slots.push({
                 startAt: zonedTimeToUtc(slotStart, TIMEZONE),
                 endAt: zonedTimeToUtc(slotEndTime, TIMEZONE),

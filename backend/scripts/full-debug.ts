@@ -15,7 +15,6 @@ async function main() {
     include: {
       availabilityRules: true,
       exceptionDates: true,
-      blockedSlots: true,
       appointments: true,
     },
   })

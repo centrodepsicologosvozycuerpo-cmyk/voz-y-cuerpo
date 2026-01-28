@@ -20,7 +20,7 @@ export const dynamic = 'force-dynamic'
 
 export async function GET(request: Request) {
   try {
-    const user = await requireAuth()
+    const user = await requireAuth(request)
     const { searchParams } = new URL(request.url)
     
     const from = searchParams.get('from')
@@ -73,7 +73,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const user = await requireAuth()
+    const user = await requireAuth(request)
     const body = await request.json()
     
     const validated = createHoldSchema.parse(body)

@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { API_URL } from '@/lib/api'
+import { useToast } from '@/hooks/use-toast'
 
 interface EditProfessionalDialogProps {
   open: boolean
@@ -15,6 +16,7 @@ interface EditProfessionalDialogProps {
 }
 
 export function EditProfessionalDialog({ open, onClose, onSuccess, professionalId }: EditProfessionalDialogProps) {
+  const { toast } = useToast()
   const [loading, setLoading] = useState(false)
   const [loadingData, setLoadingData] = useState(true)
   const [photoFile, setPhotoFile] = useState<File | null>(null)
@@ -69,7 +71,7 @@ export function EditProfessionalDialog({ open, onClose, onSuccess, professionalI
       }
     } catch (error) {
       console.error('Error loading professional:', error)
-      alert('Error al cargar los datos del profesional')
+      toast({ title: 'Error al cargar los datos del profesional', variant: 'destructive' })
     } finally {
       setLoadingData(false)
     }
@@ -80,12 +82,12 @@ export function EditProfessionalDialog({ open, onClose, onSuccess, professionalI
     if (file) {
       // Validar que sea una imagen
       if (!file.type.startsWith('image/')) {
-        alert('Por favor, seleccioná un archivo de imagen')
+        toast({ title: 'Por favor, seleccioná un archivo de imagen', variant: 'destructive' })
         return
       }
       // Validar tamaño (max 5MB)
       if (file.size > 5 * 1024 * 1024) {
-        alert('La imagen no debe superar los 5MB')
+        toast({ title: 'La imagen no debe superar los 5MB', variant: 'destructive' })
         return
       }
       setPhotoFile(file)
@@ -122,7 +124,7 @@ export function EditProfessionalDialog({ open, onClose, onSuccess, professionalI
           const photoData = await photoRes.json()
           photoUrl = photoData.storageName
         } else {
-          alert('Error al subir la foto')
+          toast({ title: 'Error al subir la foto', variant: 'destructive' })
           setLoading(false)
           return
         }
@@ -144,16 +146,16 @@ export function EditProfessionalDialog({ open, onClose, onSuccess, professionalI
       })
 
       if (res.ok) {
-        alert('Profesional actualizado correctamente')
+        toast({ title: 'Profesional actualizado correctamente' })
         setPhotoFile(null)
         setPhotoPreview(null)
         onSuccess()
       } else {
         const error = await res.json()
-        alert(error.error || 'Error al actualizar el profesional')
+        toast({ title: error.error || 'Error al actualizar el profesional', variant: 'destructive' })
       }
     } catch (error) {
-      alert('Error al actualizar el profesional')
+      toast({ title: 'Error al actualizar el profesional', variant: 'destructive' })
     } finally {
       setLoading(false)
     }

@@ -15,10 +15,6 @@ async function main() {
       exceptionDates: {
         orderBy: { date: 'asc' },
       },
-      blockedSlots: {
-        orderBy: { startAt: 'asc' },
-        take: 20,
-      },
       availabilityOverrides: {
         include: {
           ranges: true,
@@ -48,15 +44,6 @@ async function main() {
     }
   })
 
-  console.log(`\n🚫 BlockedSlots: ${professional.blockedSlots.length}`)
-  professional.blockedSlots.forEach((block) => {
-    const startLocal = utcToZonedTime(block.startAt, TIMEZONE)
-    const endLocal = utcToZonedTime(block.endAt, TIMEZONE)
-    console.log(`  - ${format(startLocal, 'dd/MM/yyyy HH:mm')} - ${format(endLocal, 'HH:mm')}`)
-    if (block.reason) {
-      console.log(`    Razón: ${block.reason}`)
-    }
-  })
 
   console.log(`\n🔄 AvailabilityOverrides: ${professional.availabilityOverrides.length}`)
   professional.availabilityOverrides.forEach((override) => {

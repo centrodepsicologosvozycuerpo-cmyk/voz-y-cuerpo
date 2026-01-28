@@ -10,7 +10,7 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    const user = await requireAuth()
+    const user = await requireAuth(request)
 
     const hold = await prisma.slotHold.findUnique({
       where: { id: params.id },

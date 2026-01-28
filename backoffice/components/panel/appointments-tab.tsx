@@ -10,6 +10,7 @@ import { utcToZonedTime } from 'date-fns-tz'
 import { MessageCircle, Mail, X, Check, Clock, AlertCircle } from 'lucide-react'
 import { Chip } from '@/components/ui/chip'
 import { API_URL } from '@/lib/api'
+import { useToast } from '@/hooks/use-toast'
 import {
   Dialog,
   DialogContent,
@@ -26,6 +27,7 @@ interface AppointmentsTabProps {
 }
 
 export function AppointmentsTab({ professionalId }: AppointmentsTabProps) {
+  const { toast } = useToast()
   const [appointments, setAppointments] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [actionLoading, setActionLoading] = useState<string | null>(null)
@@ -94,12 +96,13 @@ export function AppointmentsTab({ professionalId }: AppointmentsTabProps) {
       if (res.ok) {
         loadAppointments()
         setConfirmDialog({ open: false, appointmentId: '', clientName: '', date: '' })
+        toast({ title: 'Turno confirmado correctamente' })
       } else {
         const data = await res.json()
-        alert(data.error || 'Error al confirmar')
+        toast({ title: data.error || 'Error al confirmar', variant: 'destructive' })
       }
     } catch (error) {
-      alert('Error al confirmar el turno')
+      toast({ title: 'Error al confirmar el turno', variant: 'destructive' })
     } finally {
       setActionLoading(null)
     }
@@ -112,7 +115,7 @@ export function AppointmentsTab({ professionalId }: AppointmentsTabProps) {
 
   const handleCancel = async () => {
     if (!cancelReason.trim()) {
-      alert('Por favor, ingresá un motivo de cancelación')
+      toast({ title: 'Por favor, ingresá un motivo de cancelación', variant: 'destructive' })
       return
     }
 
@@ -143,10 +146,10 @@ export function AppointmentsTab({ professionalId }: AppointmentsTabProps) {
         })
       } else {
         const data = await res.json()
-        alert(data.error || 'Error al cancelar')
+        toast({ title: data.error || 'Error al cancelar', variant: 'destructive' })
       }
     } catch (error) {
-      alert('Error al cancelar el turno')
+      toast({ title: 'Error al cancelar el turno', variant: 'destructive' })
     } finally {
       setActionLoading(null)
     }

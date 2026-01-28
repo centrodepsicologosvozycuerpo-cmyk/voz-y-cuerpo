@@ -17,7 +17,6 @@ async function main() {
         orderBy: [{ dayOfWeek: 'asc' }, { startTime: 'asc' }],
       },
       exceptionDates: true,
-      blockedSlots: true,
       appointments: {
         where: {
           status: { in: ['PENDING', 'CONFIRMED'] },
@@ -102,7 +101,6 @@ async function main() {
         
         let slotCount = 0
         let excludedPast = 0
-        let excludedBlocked = 0
         let excludedOccupied = 0
         
         while (slotStart < slotEnd) {
@@ -110,13 +108,6 @@ async function main() {
           if (slotEndTime > slotEnd) break
           
           const isPast = slotStart.getTime() <= now.getTime()
-          const isBlocked = professional.blockedSlots.some((block) => {
-            const blockStart = utcToZonedTime(block.startAt, TIMEZONE)
-            const blockEnd = utcToZonedTime(block.endAt, TIMEZONE)
-            return (slotStart >= blockStart && slotStart < blockEnd) ||
-                   (slotEndTime > blockStart && slotEndTime <= blockEnd) ||
-                   (slotStart <= blockStart && slotEndTime >= blockEnd)
-          })
           const isOccupied = professional.appointments.some((apt) => {
             const aptStart = utcToZonedTime(apt.startAt, TIMEZONE)
             const aptEnd = utcToZonedTime(apt.endAt, TIMEZONE)
@@ -126,7 +117,6 @@ async function main() {
           })
           
           if (isPast) excludedPast++
-          else if (isBlocked) excludedBlocked++
           else if (isOccupied) excludedOccupied++
           else slotCount++
           
@@ -135,7 +125,6 @@ async function main() {
         
         console.log(`        Slots generados: ${slotCount}`)
         console.log(`        Excluidos (pasado): ${excludedPast}`)
-        console.log(`        Excluidos (bloqueados): ${excludedBlocked}`)
         console.log(`        Excluidos (ocupados): ${excludedOccupied}`)
       }
     }

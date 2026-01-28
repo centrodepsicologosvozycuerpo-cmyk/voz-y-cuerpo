@@ -23,7 +23,6 @@ async function main() {
   // (esto es redundante pero por seguridad)
   await prisma.notificationLog.deleteMany()
   await prisma.appointment.deleteMany()
-  await prisma.blockedSlot.deleteMany()
   await prisma.availabilityOverrideRange.deleteMany()
   await prisma.availabilityOverride.deleteMany()
   await prisma.exceptionDate.deleteMany()

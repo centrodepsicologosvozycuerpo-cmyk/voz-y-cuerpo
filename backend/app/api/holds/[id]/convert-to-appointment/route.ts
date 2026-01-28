@@ -3,6 +3,8 @@ import { requireAuth } from '@/lib/security'
 import { prisma } from '@/lib/prisma'
 import { logAudit } from '@/lib/audit'
 import { generateToken } from '@/lib/utils'
+import { sendEmail } from '@/lib/email'
+import { patientConfirmationEmail } from '@/lib/email-templates'
 
 export const dynamic = 'force-dynamic'
 
@@ -11,7 +13,7 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   try {
-    const user = await requireAuth()
+    const user = await requireAuth(request)
 
     const hold = await prisma.slotHold.findUnique({
       where: { id: params.id },
@@ -55,8 +57,8 @@ export async function POST(
         endAt: hold.endAt,
         modality: 'presencial', // Por defecto, se puede ajustar
         clientName: `${hold.patient.firstName} ${hold.patient.lastName}`,
-        clientEmail: '', // Se puede agregar email del paciente si se agrega al modelo
-        clientPhone: hold.patient.emergencyPhone,
+        clientEmail: hold.patient.email || '',
+        clientPhone: hold.patient.phone || hold.patient.emergencyPhone,
         status: 'CONFIRMED',
         source: 'HOLD_CONVERTED',
         confirmationToken,
@@ -80,6 +82,27 @@ export async function POST(
       patientId: hold.patientId,
       appointmentId: appointment.id,
     })
+
+    // Enviar email al paciente si tiene email registrado
+    if (hold.patient.email) {
+      const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+      const cancelUrl = `${APP_URL}/turnos/cancelar/?token=${cancelToken}`
+
+      const emailData = patientConfirmationEmail({
+        patientName: hold.patient.firstName,
+        professionalName: hold.professional.fullName,
+        professionalPhone: hold.professional.whatsappPhone || undefined,
+        appointmentDate: hold.startAt,
+        modality: 'presencial',
+        cancelUrl,
+      })
+
+      await sendEmail({
+        to: hold.patient.email,
+        subject: emailData.subject,
+        html: emailData.html,
+      })
+    }
 
     return NextResponse.json({ appointment }, { status: 201 })
   } catch (error: any) {

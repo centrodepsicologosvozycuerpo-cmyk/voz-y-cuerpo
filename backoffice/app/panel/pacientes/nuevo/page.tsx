@@ -10,13 +10,18 @@ import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import { differenceInYears } from 'date-fns'
 import { API_URL } from '@/lib/api'
+import { authFetch } from '@/lib/auth-client'
+import { useToast } from '@/hooks/use-toast'
 
 export default function NewPatientPage() {
   const router = useRouter()
+  const { toast } = useToast()
   const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
+    email: '',
+    phone: '',
     birthDate: '',
     address: '',
     city: '',
@@ -53,7 +58,7 @@ export default function NewPatientPage() {
         birthDate: new Date(formData.birthDate).toISOString(),
       }
 
-      const res = await fetch(`${API_URL}/api/patients`, {
+      const res = await authFetch(`${API_URL}/api/patients`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -61,14 +66,15 @@ export default function NewPatientPage() {
 
       if (res.ok) {
         const data = await res.json()
+        toast({ title: 'Paciente creado correctamente' })
         router.push(`/panel/pacientes/detalle/?id=${data.patient.id}`)
       } else {
         const error = await res.json()
-        alert(error.error || 'Error al crear paciente')
+        toast({ title: error.error || 'Error al crear paciente', variant: 'destructive' })
       }
     } catch (error) {
       console.error('Error creating patient:', error)
-      alert('Error al crear paciente')
+      toast({ title: 'Error al crear paciente', variant: 'destructive' })
     } finally {
       setLoading(false)
     }
@@ -111,6 +117,25 @@ export default function NewPatientPage() {
                     required
                     value={formData.lastName}
                     onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    placeholder="Para enviar notificaciones de turnos"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="phone">Teléfono</Label>
+                  <Input
+                    id="phone"
+                    value={formData.phone}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    placeholder="+54 11 1234-5678"
                   />
                 </div>
                 <div>
