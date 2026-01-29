@@ -53,12 +53,8 @@ backend/.env
 next-env.d.ts
 
 # prisma
-/prisma/migrations
-/prisma/dev.db
-/prisma/dev.db-journal
 backend/prisma/prisma/dev.db
 backend/prisma/prisma/dev.db-journal
-backend/prisma/migrations/
 
 # videos y archivos grandes
 *.mp4
