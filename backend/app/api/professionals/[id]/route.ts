@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/security'
 import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
+import { getPublicUrl } from '@/lib/storage'
+import { getOptimizedImageUrl } from '@/lib/cloudinary-urls'
 
 export const dynamic = 'force-dynamic'
 
@@ -54,7 +56,23 @@ export async function GET(
       )
     }
 
-    return NextResponse.json({ professional })
+    const photo = professional.photo
+    let photoUrls: { original: string; thumbnail: string; avatar: string; profile: string } | undefined
+    if (photo?.trim()) {
+      const sourceUrl = photo.startsWith('http')
+        ? photo
+        : getPublicUrl(photo.startsWith('professionals/') ? photo : `professionals/${photo}`)
+      photoUrls = {
+        original: sourceUrl,
+        thumbnail: getOptimizedImageUrl(sourceUrl, 'thumbnail'),
+        avatar: getOptimizedImageUrl(sourceUrl, 'avatar'),
+        profile: getOptimizedImageUrl(sourceUrl, 'profile'),
+      }
+    }
+
+    return NextResponse.json({
+      professional: { ...professional, photoUrls },
+    })
   } catch (error) {
     console.error('Error fetching professional:', error)
     return NextResponse.json(

@@ -18,6 +18,7 @@ interface Professional {
   modalities: string
   approach?: string
   photo?: string
+  photoUrls?: { original: string; thumbnail: string; avatar: string; profile: string }
 }
 
 export default function EquipoPage() {
@@ -85,10 +86,10 @@ export default function EquipoPage() {
               <Card key={prof.id} className="hover:shadow-lg transition-shadow flex flex-col h-full">
                 <CardHeader className="flex-shrink-0">
                   <div className="flex items-start gap-4">
-                    {prof.photo ? (
+                    {(prof.photoUrls?.avatar ?? prof.photo) ? (
                       <div className="flex-shrink-0">
                         <img
-                          src={`${API_URL}/api/professionals/photo/${prof.photo}`}
+                          src={prof.photoUrls?.avatar ?? prof.photoUrls?.original ?? `${API_URL}/api/professionals/photo/${prof.photo}`}
                           alt={prof.fullName}
                           className="w-20 h-20 object-cover rounded-full"
                         />

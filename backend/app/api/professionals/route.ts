@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { getPublicUrl } from '@/lib/storage'
+import { getOptimizedImageUrl } from '@/lib/cloudinary-urls'
 
 // Handler para preflight CORS
 export async function OPTIONS() {
@@ -11,6 +13,19 @@ export async function OPTIONS() {
       'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     },
   })
+}
+
+function buildPhotoUrls(photo: string | null): { original: string; thumbnail: string; avatar: string; profile: string } | null {
+  if (!photo || !photo.trim()) return null
+  const sourceUrl = photo.startsWith('http')
+    ? photo
+    : getPublicUrl(photo.startsWith('professionals/') ? photo : `professionals/${photo}`)
+  return {
+    original: sourceUrl,
+    thumbnail: getOptimizedImageUrl(sourceUrl, 'thumbnail'),
+    avatar: getOptimizedImageUrl(sourceUrl, 'avatar'),
+    profile: getOptimizedImageUrl(sourceUrl, 'profile'),
+  }
 }
 
 export async function GET() {
@@ -35,7 +50,12 @@ export async function GET() {
       },
     })
 
-    return NextResponse.json(professionals)
+    const withPhotoUrls = professionals.map(p => ({
+      ...p,
+      photoUrls: buildPhotoUrls(p.photo),
+    }))
+
+    return NextResponse.json(withPhotoUrls)
   } catch (error) {
     console.error('Error fetching professionals:', error)
     return NextResponse.json(

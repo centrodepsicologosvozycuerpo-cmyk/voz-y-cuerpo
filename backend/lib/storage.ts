@@ -12,18 +12,25 @@ import { existsSync } from 'fs'
 import { join } from 'path'
 
 // Configuración desde variables de entorno
+const B2_ENDPOINT_RAW = process.env.B2_ENDPOINT || ''
+// El SDK de AWS/Smithy exige URL completa; si solo viene el host (ej: s3.us-east-005.backblazeb2.com), añadimos https://
+const B2_ENDPOINT_NORMALIZED =
+  B2_ENDPOINT_RAW.startsWith('http://') || B2_ENDPOINT_RAW.startsWith('https://')
+    ? B2_ENDPOINT_RAW
+    : B2_ENDPOINT_RAW ? `https://${B2_ENDPOINT_RAW}` : ''
+
 const B2_ENABLED = !!(
   process.env.B2_KEY_ID &&
   process.env.B2_APPLICATION_KEY &&
   process.env.B2_BUCKET_NAME &&
-  process.env.B2_ENDPOINT
+  B2_ENDPOINT_NORMALIZED
 )
 
 const B2_CONFIG = {
   keyId: process.env.B2_KEY_ID || '',
   applicationKey: process.env.B2_APPLICATION_KEY || '',
   bucketName: process.env.B2_BUCKET_NAME || '',
-  endpoint: process.env.B2_ENDPOINT || '', // Ej: https://s3.us-west-004.backblazeb2.com
+  endpoint: B2_ENDPOINT_NORMALIZED,
   region: process.env.B2_REGION || 'us-west-004',
 }
 
@@ -57,6 +64,17 @@ interface UploadResult {
 interface StorageOptions {
   folder?: string       // Subcarpeta (ej: 'professionals', 'patients')
   contentType?: string  // MIME type
+}
+
+/**
+ * URL pública de descarga en B2 (Friendly URL).
+ * B2 muestra en consola: https://f005.backblazeb2.com/file/bucket/key para us-east-005.
+ * El número (005) se obtiene del endpoint s3.us-east-005.backblazeb2.com.
+ */
+function buildB2PublicUrl(key: string): string {
+  const match = B2_CONFIG.endpoint.match(/us-east-(\d+)/)
+  const regionNum = match ? match[1] : '004'
+  return `https://f${regionNum}.backblazeb2.com/file/${B2_CONFIG.bucketName}/${key}`
 }
 
 /**
@@ -95,17 +113,9 @@ export async function uploadFile(
 
     await upload.done()
 
-    // URL pública del archivo en B2
-    // Formato: https://f004.backblazeb2.com/file/bucket-name/key
-    const bucketUrl = B2_CONFIG.endpoint.replace('s3.', 'f004.').replace('.backblazeb2.com', '.backblazeb2.com/file')
-    const url = `${bucketUrl}/${B2_CONFIG.bucketName}/${key}`
+    const url = buildB2PublicUrl(key)
 
-    console.log('[storage] B2 upload', {
-      key,
-      bucketUrlLength: bucketUrl?.length ?? 0,
-      bucketUrlPreview: bucketUrl ? bucketUrl.slice(0, 60) : bucketUrl,
-      urlLength: url?.length ?? 0,
-    })
+    console.log('[storage] B2 upload', { key, urlLength: url?.length ?? 0 })
 
     return {
       key,
@@ -203,8 +213,18 @@ export function isCloudStorageEnabled(): boolean {
  */
 export function getStorageBaseUrl(): string {
   if (B2_ENABLED) {
-    const bucketUrl = B2_CONFIG.endpoint.replace('s3.', 'f004.').replace('.backblazeb2.com', '.backblazeb2.com/file')
-    return `${bucketUrl}/${B2_CONFIG.bucketName}`
+    const match = B2_CONFIG.endpoint.match(/us-east-(\d+)/)
+    const regionNum = match ? match[1] : '004'
+    return `https://f${regionNum}.backblazeb2.com/file/${B2_CONFIG.bucketName}`
   }
   return '/uploads'
+}
+
+/**
+ * URL pública de un archivo (B2 o path local). key ej: "professionals/1770345319806-xxx.jpg"
+ * B2: Friendly URL (ej. https://f005.backblazeb2.com/file/vozycuerpo/...).
+ */
+export function getPublicUrl(key: string): string {
+  if (B2_ENABLED) return buildB2PublicUrl(key)
+  return `/uploads/${key}`
 }

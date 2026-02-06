@@ -6,61 +6,45 @@ import { NextResponse } from 'next/server'
 /**
  * Verifica que el usuario esté autenticado y obtiene su información
  * Soporta autenticación por:
+ * - Header Authorization: Bearer {token} (backoffice)
+ * - Header X-Professional-Id (backoffice)
  * - Sesión NextAuth
- * - Header Authorization: Bearer {token}
- * - Header X-Professional-Id
+ *
+ * Bearer/X-Professional-Id se comprueban primero para no llamar a getServerSession
+ * cuando NEXTAUTH_URL no está definida (evita "Invalid URL" en producción).
  */
 export async function requireAuth(request?: Request) {
-  // Primero intentar con sesión NextAuth
-  const session = await getServerSession(authOptions)
-  
-  if (session?.user) {
-    const user = await prisma.user.findUnique({
-      where: { id: (session.user as any).id },
-      include: {
-        professional: true,
-      },
-    })
-
-    if (user && user.professional) {
-      return user
-    }
-  }
-
   if (request) {
-    // Intentar con Bearer token (backoffice)
+    // Primero Bearer (backoffice) — así no cargamos NextAuth ni NEXTAUTH_URL
     const authHeader = request.headers.get('Authorization')
-    
     if (authHeader && authHeader.startsWith('Bearer ')) {
-      const token = authHeader.substring(7) // Remover "Bearer "
-      
+      const token = authHeader.substring(7)
       const user = await prisma.user.findUnique({
         where: { id: token },
-        include: {
-          professional: true,
-        },
+        include: { professional: true },
       })
-
-      if (user && user.professional) {
-        return user
-      }
+      if (user?.professional) return user
     }
 
-    // También intentar con header X-Professional-Id (compatibilidad)
+    // Luego X-Professional-Id (compatibilidad)
     const professionalId = request.headers.get('X-Professional-Id')
-    
     if (professionalId) {
       const user = await prisma.user.findFirst({
         where: { professionalId },
-        include: {
-          professional: true,
-        },
+        include: { professional: true },
       })
-
-      if (user && user.professional) {
-        return user
-      }
+      if (user?.professional) return user
     }
+  }
+
+  // Por último, sesión NextAuth (requiere NEXTAUTH_URL en producción)
+  const session = await getServerSession(authOptions)
+  if (session?.user) {
+    const user = await prisma.user.findUnique({
+      where: { id: (session.user as any).id },
+      include: { professional: true },
+    })
+    if (user?.professional) return user
   }
 
   throw new Error('No autorizado: sesión requerida')

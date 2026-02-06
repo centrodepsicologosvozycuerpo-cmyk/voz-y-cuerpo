@@ -20,7 +20,7 @@ const nextConfig = {
           },
           {
             key: 'Access-Control-Allow-Headers',
-            value: 'Content-Type, Authorization',
+            value: 'Content-Type, Authorization, X-Professional-Id',
           },
           {
             key: 'X-Frame-Options',

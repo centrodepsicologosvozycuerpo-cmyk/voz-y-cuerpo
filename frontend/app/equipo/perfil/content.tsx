@@ -21,6 +21,7 @@ interface Professional {
   approach?: string
   description?: string
   photo?: string
+  photoUrls?: { original: string; thumbnail: string; avatar: string; profile: string }
   isActive: boolean
 }
 
@@ -94,10 +95,10 @@ export function ProfessionalProfileContent() {
 
         <Card className="mb-8">
           <CardHeader>
-            {professional.photo && (
+            {(professional.photoUrls?.profile ?? professional.photoUrls?.original ?? professional.photo) && (
               <div className="mb-6 flex flex-col items-center">
                 <img
-                  src={`${API_URL}/api/professionals/photo/${professional.photo}`}
+                  src={professional.photoUrls?.profile ?? professional.photoUrls?.original ?? `${API_URL}/api/professionals/photo/${professional.photo}`}
                   alt={professional.fullName}
                   className="w-full max-w-md h-64 object-cover rounded-md"
                 />

@@ -1,9 +1,16 @@
 import { NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/security'
 import { uploadFile, isCloudStorageEnabled } from '@/lib/storage'
-import { getOptimizedImageUrl } from '@/lib/cloudinary-urls'
 
 export const dynamic = 'force-dynamic'
+
+// Construir URLs de Cloudinary sin importar ningún módulo cloudinary (evita chunk SDK → Invalid URL)
+function buildCloudinaryUrl(sourceUrl: string, transform: string): string {
+  const cloudName = process.env.CLOUDINARY_CLOUD_NAME
+  if (!cloudName || !sourceUrl || sourceUrl.trim() === '') return sourceUrl || ''
+  const encoded = encodeURIComponent(sourceUrl)
+  return `https://res.cloudinary.com/${cloudName}/image/fetch/${transform}/${encoded}`
+}
 
 // Handler para preflight CORS
 export async function OPTIONS() {
@@ -19,6 +26,7 @@ export async function OPTIONS() {
 
 export async function POST(request: Request) {
   try {
+    console.log('[photo/upload] request', request)
     await requireAuth(request) // Solo usuarios autenticados pueden subir fotos
     
     const formData = await request.formData()
@@ -49,6 +57,7 @@ export async function POST(request: Request) {
     }
 
     // Subir archivo a storage (B2 o local)
+    console.log('[photo/upload] subiendo archivo a storage')
     const bytes = await file.arrayBuffer()
     const buffer = Buffer.from(bytes)
     
@@ -68,13 +77,13 @@ export async function POST(request: Request) {
       console.error('[photo/upload] result.url vacía después de uploadFile, no se llamará getOptimizedImageUrl')
     }
 
-    // Generar URLs optimizadas si Cloudinary está habilitado (solo si result.url no está vacía)
-    const baseUrl = result.url && result.url.trim() !== '' ? result.url : ''
+    // URLs optimizadas (Cloudinary fetch) sin cargar SDK; si no hay cloud name, devolvemos la misma URL
+    const baseUrl = result.url && result.url.trim() !== '' ? result.url : (result.url ?? '')
     const urls = {
       original: result.url,
-      thumbnail: baseUrl ? getOptimizedImageUrl(baseUrl, 'thumbnail') : result.url ?? '',
-      avatar: baseUrl ? getOptimizedImageUrl(baseUrl, 'avatar') : result.url ?? '',
-      profile: baseUrl ? getOptimizedImageUrl(baseUrl, 'profile') : result.url ?? '',
+      thumbnail: baseUrl ? buildCloudinaryUrl(baseUrl, 'w_150,h_150,c_fill,g_auto,q_auto,f_auto') : baseUrl,
+      avatar: baseUrl ? buildCloudinaryUrl(baseUrl, 'w_200,h_200,c_fill,g_face,q_auto,f_auto') : baseUrl,
+      profile: baseUrl ? buildCloudinaryUrl(baseUrl, 'w_600,h_600,c_fill,g_face,q_auto,f_auto') : baseUrl,
     }
 
     return NextResponse.json({

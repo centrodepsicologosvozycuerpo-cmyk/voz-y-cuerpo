@@ -64,8 +64,9 @@ export function EditProfessionalDialog({ open, onClose, onSuccess, professionalI
           photo: prof.photo || '',
         })
 
-        // Si hay foto existente, mostrar preview
-        if (prof.photo) {
+        if (prof.photoUrls?.avatar ?? prof.photoUrls?.original) {
+          setPhotoPreview(prof.photoUrls?.avatar ?? prof.photoUrls?.original ?? null)
+        } else if (prof.photo) {
           setPhotoPreview(`${API_URL}/api/professionals/photo/${prof.photo}`)
         }
       }
@@ -123,6 +124,7 @@ export function EditProfessionalDialog({ open, onClose, onSuccess, professionalI
         if (photoRes.ok) {
           const photoData = await photoRes.json()
           photoUrl = photoData.storageName
+          setPhotoPreview(photoData.urls?.avatar ?? photoData.urls?.original ?? photoData.url ?? null)
         } else {
           toast({ title: 'Error al subir la foto', variant: 'destructive' })
           setLoading(false)

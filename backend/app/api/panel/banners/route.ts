@@ -6,11 +6,11 @@ import { getOptimizedImageUrl } from '@/lib/cloudinary-urls'
 
 export const dynamic = 'force-dynamic'
 
-// CORS headers
+// CORS headers (X-Professional-Id lo envía el backoffice)
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Professional-Id',
 }
 
 export async function OPTIONS() {
@@ -48,17 +48,17 @@ export async function GET(request: Request) {
       },
     })
 
-    // Agregar URLs optimizadas para imágenes
+    // Agregar URLs optimizadas para imágenes (evitar crash si uploadedBy/professional es null)
     const bannersWithUrls = banners.map(banner => ({
       ...banner,
-      uploadedByName: banner.uploadedBy.professional.fullName,
-      urls: banner.mediaType === 'image' 
+      uploadedByName: banner.uploadedBy?.professional?.fullName ?? '—',
+      urls: banner.mediaType === 'image' && banner.url
         ? {
             original: banner.url,
             thumbnail: getOptimizedImageUrl(banner.url, 'thumbnail'),
             hero: getOptimizedImageUrl(banner.url, 'hero'),
           }
-        : { original: banner.url },
+        : { original: banner.url ?? '' },
     }))
 
     return NextResponse.json({ banners: bannersWithUrls }, { headers: corsHeaders })

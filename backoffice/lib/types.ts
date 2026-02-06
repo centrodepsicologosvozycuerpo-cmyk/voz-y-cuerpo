@@ -11,6 +11,12 @@ export interface Professional {
   approach?: string | null
   description?: string | null
   photo?: string | null
+  photoUrls?: {
+    original: string
+    thumbnail: string
+    avatar: string
+    profile: string
+  } | null
   isActive: boolean
   createdAt: Date | string
   updatedAt: Date | string

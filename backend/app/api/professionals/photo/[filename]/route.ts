@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { readFile } from 'fs/promises'
 import { join } from 'path'
 import { existsSync } from 'fs'
+import { isCloudStorageEnabled, getPublicUrl } from '@/lib/storage'
 
 const UPLOAD_DIR = join(process.cwd(), 'uploads', 'professionals')
 
@@ -12,8 +13,21 @@ export async function GET(
   { params }: { params: { filename: string } }
 ) {
   try {
-    const filePath = join(UPLOAD_DIR, params.filename)
-    
+    const filename = params.filename
+    if (!filename) {
+      return NextResponse.json({ error: 'Filename requerido' }, { status: 400 })
+    }
+
+    // Con B2, la foto está en la nube: redirigir a la URL pública
+    if (isCloudStorageEnabled()) {
+      const key = filename.startsWith('professionals/') ? filename : `professionals/${filename}`
+      const publicUrl = getPublicUrl(key)
+      return NextResponse.redirect(publicUrl, 302)
+    }
+
+    // Local: servir desde disco (filename puede ser "xxx.jpg" o "professionals/xxx.jpg")
+    const localFilename = filename.includes('/') ? filename.split('/').pop()! : filename
+    const filePath = join(UPLOAD_DIR, localFilename)
     if (!existsSync(filePath)) {
       return NextResponse.json(
         { error: 'Foto no encontrada' },
@@ -22,9 +36,7 @@ export async function GET(
     }
 
     const fileBuffer = await readFile(filePath)
-    
-    // Detectar tipo MIME basado en extensión
-    const extension = params.filename.substring(params.filename.lastIndexOf('.'))
+    const extension = filename.substring(filename.lastIndexOf('.'))
     let contentType = 'image/jpeg'
     if (extension === '.png') contentType = 'image/png'
     if (extension === '.gif') contentType = 'image/gif'

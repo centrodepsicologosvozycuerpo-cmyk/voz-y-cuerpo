@@ -64,7 +64,9 @@ export function ProfessionalsTab({ professionalId }: ProfessionalsTabProps) {
           photo: prof.photo || '',
         })
 
-        if (prof.photo) {
+        if (prof.photoUrls?.avatar ?? prof.photoUrls?.original) {
+          setPhotoPreview(prof.photoUrls?.avatar ?? prof.photoUrls?.original ?? null)
+        } else if (prof.photo) {
           setPhotoPreview(`${API_URL}/api/professionals/photo/${prof.photo}`)
         }
       }
@@ -124,6 +126,7 @@ export function ProfessionalsTab({ professionalId }: ProfessionalsTabProps) {
         if (photoRes.ok) {
           const photoData = await photoRes.json()
           photoUrl = photoData.storageName
+          setPhotoPreview(photoData.urls?.avatar ?? photoData.urls?.original ?? photoData.url ?? null)
         } else {
           toast({
             variant: 'destructive',
@@ -199,7 +202,9 @@ export function ProfessionalsTab({ professionalId }: ProfessionalsTabProps) {
         photo: professional.photo || '',
       })
 
-      if (professional.photo) {
+      if (professional.photoUrls?.avatar ?? professional.photoUrls?.original) {
+        setPhotoPreview(professional.photoUrls?.avatar ?? professional.photoUrls?.original ?? null)
+      } else if (professional.photo) {
         setPhotoPreview(`${API_URL}/api/professionals/photo/${professional.photo}`)
       } else {
         setPhotoPreview(null)
