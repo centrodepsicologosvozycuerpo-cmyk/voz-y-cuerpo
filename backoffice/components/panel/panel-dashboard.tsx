@@ -7,6 +7,7 @@ import { AppointmentsTab } from './appointments-tab'
 import { ProfessionalsTab } from './professionals-tab'
 import { ChangeRequestsTab } from './change-requests-tab'
 import { PatientsTab } from './patients-tab'
+import { ConfigTab } from './config-tab'
 import { LogoutButton } from './logout-button'
 import type { AuthUser } from '@/lib/auth-client'
 
@@ -25,12 +26,13 @@ export function PanelDashboard({ user }: PanelDashboardProps) {
       </div>
 
       <Tabs defaultValue="calendar" className="space-y-6">
-        <TabsList>
+        <TabsList className="flex-wrap">
           <TabsTrigger value="calendar">Mi Calendario</TabsTrigger>
           <TabsTrigger value="overrides">Días Especiales</TabsTrigger>
           <TabsTrigger value="appointments">Mis Turnos</TabsTrigger>
           <TabsTrigger value="patients">Pacientes</TabsTrigger>
           <TabsTrigger value="professionals">Mi Perfil</TabsTrigger>
+          <TabsTrigger value="config">Configuración</TabsTrigger>
           <TabsTrigger value="change-requests">Solicitudes</TabsTrigger>
         </TabsList>
 
@@ -52,6 +54,10 @@ export function PanelDashboard({ user }: PanelDashboardProps) {
 
         <TabsContent value="professionals">
           <ProfessionalsTab professionalId={user.professionalId} />
+        </TabsContent>
+
+        <TabsContent value="config">
+          <ConfigTab />
         </TabsContent>
 
         <TabsContent value="change-requests">

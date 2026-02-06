@@ -6,9 +6,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Chip } from '@/components/ui/chip'
-import { Save, X, Edit, Camera, Lock } from 'lucide-react'
+import { Save, X, Edit, Camera } from 'lucide-react'
 import { API_URL } from '@/lib/api'
-import { authFetch } from '@/lib/auth-client'
 import { useToast } from '@/hooks/use-toast'
 
 interface ProfessionalsTabProps {
@@ -23,13 +22,6 @@ export function ProfessionalsTab({ professionalId }: ProfessionalsTabProps) {
   const [saving, setSaving] = useState(false)
   const [photoFile, setPhotoFile] = useState<File | null>(null)
   const [photoPreview, setPhotoPreview] = useState<string | null>(null)
-  const [showChangePassword, setShowChangePassword] = useState(false)
-  const [changingPassword, setChangingPassword] = useState(false)
-  const [passwordData, setPasswordData] = useState({
-    currentPassword: '',
-    newPassword: '',
-    confirmPassword: '',
-  })
   const [formData, setFormData] = useState({
     fullName: '',
     title: '',
@@ -215,68 +207,6 @@ export function ProfessionalsTab({ professionalId }: ProfessionalsTabProps) {
     }
   }
 
-  const handleChangePassword = async () => {
-    if (passwordData.newPassword !== passwordData.confirmPassword) {
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: 'Las contraseñas no coinciden',
-      })
-      return
-    }
-
-    if (passwordData.newPassword.length < 8) {
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: 'La nueva contraseña debe tener al menos 8 caracteres',
-      })
-      return
-    }
-
-    setChangingPassword(true)
-
-    try {
-      const res = await authFetch(`${API_URL}/api/panel/change-password`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          currentPassword: passwordData.currentPassword,
-          newPassword: passwordData.newPassword,
-        }),
-      })
-
-      if (res.ok) {
-        toast({
-          variant: 'success',
-          title: 'Éxito',
-          description: 'Contraseña actualizada correctamente',
-        })
-        setShowChangePassword(false)
-        setPasswordData({
-          currentPassword: '',
-          newPassword: '',
-          confirmPassword: '',
-        })
-      } else {
-        const error = await res.json()
-        toast({
-          variant: 'destructive',
-          title: 'Error',
-          description: error.error || 'Error al cambiar la contraseña',
-        })
-      }
-    } catch (error) {
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: 'Error al cambiar la contraseña',
-      })
-    } finally {
-      setChangingPassword(false)
-    }
-  }
-
   if (loading) {
     return <div>Cargando...</div>
   }
@@ -291,103 +221,6 @@ export function ProfessionalsTab({ professionalId }: ProfessionalsTabProps) {
 
   return (
     <div className="space-y-6">
-      {/* Card de Cambio de Contraseña */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="flex items-center gap-2">
-                <Lock className="h-5 w-5" />
-                Cambiar Contraseña
-              </CardTitle>
-              <CardDescription>
-                Actualizá tu contraseña de acceso
-              </CardDescription>
-            </div>
-            <Button
-              variant={showChangePassword ? 'outline' : 'default'}
-              onClick={() => {
-                setShowChangePassword(!showChangePassword)
-                if (showChangePassword) {
-                  setPasswordData({
-                    currentPassword: '',
-                    newPassword: '',
-                    confirmPassword: '',
-                  })
-                }
-              }}
-            >
-              {showChangePassword ? (
-                <>
-                  <X className="h-4 w-4 mr-2" />
-                  Cancelar
-                </>
-              ) : (
-                <>
-                  <Lock className="h-4 w-4 mr-2" />
-                  Cambiar Contraseña
-                </>
-              )}
-            </Button>
-          </div>
-        </CardHeader>
-        {showChangePassword && (
-          <CardContent>
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="currentPassword">Contraseña Actual *</Label>
-                <Input
-                  id="currentPassword"
-                  type="password"
-                  value={passwordData.currentPassword}
-                  onChange={(e) =>
-                    setPasswordData({ ...passwordData, currentPassword: e.target.value })
-                  }
-                  placeholder="Ingresá tu contraseña actual"
-                  required
-                />
-              </div>
-              <div>
-                <Label htmlFor="newPassword">Nueva Contraseña *</Label>
-                <Input
-                  id="newPassword"
-                  type="password"
-                  value={passwordData.newPassword}
-                  onChange={(e) =>
-                    setPasswordData({ ...passwordData, newPassword: e.target.value })
-                  }
-                  placeholder="Mínimo 8 caracteres"
-                  required
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  La contraseña debe tener al menos 8 caracteres
-                </p>
-              </div>
-              <div>
-                <Label htmlFor="confirmPassword">Confirmar Nueva Contraseña *</Label>
-                <Input
-                  id="confirmPassword"
-                  type="password"
-                  value={passwordData.confirmPassword}
-                  onChange={(e) =>
-                    setPasswordData({ ...passwordData, confirmPassword: e.target.value })
-                  }
-                  placeholder="Repetí la nueva contraseña"
-                  required
-                />
-              </div>
-              <Button
-                onClick={handleChangePassword}
-                disabled={changingPassword || !passwordData.currentPassword || !passwordData.newPassword || !passwordData.confirmPassword}
-                className="w-full"
-              >
-                {changingPassword ? 'Cambiando...' : 'Cambiar Contraseña'}
-              </Button>
-            </div>
-          </CardContent>
-        )}
-      </Card>
-
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">

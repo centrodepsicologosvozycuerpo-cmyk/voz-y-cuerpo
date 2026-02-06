@@ -100,6 +100,13 @@ export async function uploadFile(
     const bucketUrl = B2_CONFIG.endpoint.replace('s3.', 'f004.').replace('.backblazeb2.com', '.backblazeb2.com/file')
     const url = `${bucketUrl}/${B2_CONFIG.bucketName}/${key}`
 
+    console.log('[storage] B2 upload', {
+      key,
+      bucketUrlLength: bucketUrl?.length ?? 0,
+      bucketUrlPreview: bucketUrl ? bucketUrl.slice(0, 60) : bucketUrl,
+      urlLength: url?.length ?? 0,
+    })
+
     return {
       key,
       url,
@@ -120,6 +127,8 @@ export async function uploadFile(
 
     // URL local (relativa al servidor)
     const url = `/uploads/${key}`
+
+    console.log('[storage] local upload', { key, url })
 
     return {
       key,

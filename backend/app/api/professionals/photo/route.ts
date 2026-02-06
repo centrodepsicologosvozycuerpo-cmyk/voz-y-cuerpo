@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/security'
 import { uploadFile, isCloudStorageEnabled } from '@/lib/storage'
-import { getOptimizedImageUrl } from '@/lib/cloudinary'
+import { getOptimizedImageUrl } from '@/lib/cloudinary-urls'
 
 export const dynamic = 'force-dynamic'
 
@@ -57,12 +57,24 @@ export async function POST(request: Request) {
       contentType: file.type,
     })
 
-    // Generar URLs optimizadas si Cloudinary está habilitado
+    console.log('[photo/upload] uploadFile result', {
+      key: result.key,
+      urlLength: result.url?.length ?? 0,
+      urlPreview: result.url ? result.url.slice(0, 100) : result.url,
+      provider: result.provider,
+    })
+
+    if (!result.url || result.url.trim() === '') {
+      console.error('[photo/upload] result.url vacía después de uploadFile, no se llamará getOptimizedImageUrl')
+    }
+
+    // Generar URLs optimizadas si Cloudinary está habilitado (solo si result.url no está vacía)
+    const baseUrl = result.url && result.url.trim() !== '' ? result.url : ''
     const urls = {
       original: result.url,
-      thumbnail: getOptimizedImageUrl(result.url, 'thumbnail'),
-      avatar: getOptimizedImageUrl(result.url, 'avatar'),
-      profile: getOptimizedImageUrl(result.url, 'profile'),
+      thumbnail: baseUrl ? getOptimizedImageUrl(baseUrl, 'thumbnail') : result.url ?? '',
+      avatar: baseUrl ? getOptimizedImageUrl(baseUrl, 'avatar') : result.url ?? '',
+      profile: baseUrl ? getOptimizedImageUrl(baseUrl, 'profile') : result.url ?? '',
     }
 
     return NextResponse.json({

@@ -4,21 +4,32 @@ import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { ArrowRight } from 'lucide-react'
-
-// Videos del banner
-const carouselVideos = [
-  '/banner1.mp4',
-  '/banner5.mp4',
-  '/banner2.mp4',
-  '/banner3.mp4',
-  '/banner4.mp4',
-]
+import { fetchBanners, type Banner } from '@/lib/api'
 
 export function HeroCarousel() {
+  const [banners, setBanners] = useState<Banner[]>([])
   const [currentIndex, setCurrentIndex] = useState(0)
+  const [isLoading, setIsLoading] = useState(true)
   const videoRefs = useRef<(HTMLVideoElement | null)[]>([])
 
+  // Cargar banners al montar el componente (una sola vez)
   useEffect(() => {
+    let mounted = true
+    
+    fetchBanners().then((data) => {
+      if (mounted) {
+        setBanners(data)
+        setIsLoading(false)
+      }
+    })
+
+    return () => { mounted = false }
+  }, [])
+
+  // Manejar reproducción de videos cuando cambia el índice
+  useEffect(() => {
+    if (banners.length === 0) return
+
     // Pausar todos los videos primero
     videoRefs.current.forEach((video) => {
       if (video) {
@@ -27,64 +38,78 @@ export function HeroCarousel() {
       }
     })
 
+    const currentBanner = banners[currentIndex]
+    if (currentBanner?.mediaType !== 'video') return
+
     // Pequeño delay para asegurar que el DOM esté actualizado después del cambio de opacidad
     const timer = setTimeout(() => {
-      // Reproducir el video actual
       const currentVideo = videoRefs.current[currentIndex]
       if (currentVideo) {
-        // Reiniciar el video al inicio
         currentVideo.currentTime = 0
-        // Forzar carga si es necesario
         if (currentVideo.readyState < 2) {
           currentVideo.load()
         }
-        // Intentar reproducir
         const playPromise = currentVideo.play()
         if (playPromise !== undefined) {
-          playPromise
-            .then(() => {
-              // Video reproducido exitosamente
-            })
-            .catch((error) => {
-              console.warn(`Error al reproducir video ${currentIndex}:`, error)
-            })
+          playPromise.catch((error) => {
+            console.warn(`Error al reproducir video ${currentIndex}:`, error)
+          })
         }
       }
-    }, 200) // Delay para que la transición de opacidad termine
+    }, 200)
 
     return () => clearTimeout(timer)
-  }, [currentIndex])
+  }, [currentIndex, banners])
 
+  // Auto-avanzar el carrusel
   useEffect(() => {
+    if (banners.length <= 1) return
+
     const interval = setInterval(() => {
-      setCurrentIndex((prevIndex) => (prevIndex + 1) % carouselVideos.length)
-    }, 8000) // Cambia cada 8 segundos
+      setCurrentIndex((prevIndex) => (prevIndex + 1) % banners.length)
+    }, 8000)
 
     return () => clearInterval(interval)
-  }, [])
+  }, [banners.length])
+
+  // Si no hay banners, mostrar fondo con gradiente
+  const showFallback = !isLoading && banners.length === 0
 
   return (
     <section className="relative h-[500px] md:h-[600px] overflow-hidden">
-      {/* Videos del carrusel */}
-      {carouselVideos.map((video, index) => (
+      {/* Fondo de fallback (gradiente) cuando no hay banners */}
+      {(isLoading || showFallback) && (
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/90 via-primary to-primary/80" />
+      )}
+
+      {/* Banners del carrusel */}
+      {banners.map((banner, index) => (
         <div
-          key={index}
+          key={banner.id}
           className={`absolute inset-0 transition-opacity duration-1000 ${
             index === currentIndex ? 'opacity-100' : 'opacity-0'
           }`}
         >
-          <video
-            ref={(el) => {
-              videoRefs.current[index] = el
-            }}
-            className="absolute inset-0 w-full h-full object-cover"
-            loop
-            muted
-            playsInline
-            preload="metadata"
-          >
-            <source src={video} type="video/mp4" />
-          </video>
+          {banner.mediaType === 'video' ? (
+            <video
+              ref={(el) => {
+                videoRefs.current[index] = el
+              }}
+              className="absolute inset-0 w-full h-full object-cover"
+              loop
+              muted
+              playsInline
+              preload="metadata"
+            >
+              <source src={banner.url} type="video/mp4" />
+            </video>
+          ) : (
+            <img
+              src={banner.urls.hero || banner.url}
+              alt={banner.title || 'Banner'}
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+          )}
           {/* Overlay oscuro para mejorar legibilidad del texto */}
           <div className="absolute inset-0 bg-black/40"></div>
         </div>
@@ -118,21 +143,23 @@ export function HeroCarousel() {
         </div>
       </div>
 
-      {/* Indicadores del carrusel */}
-      <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-20 flex gap-2">
-        {carouselVideos.map((_, index) => (
-          <button
-            key={index}
-            onClick={() => setCurrentIndex(index)}
-            className={`h-2 rounded-full transition-all ${
-              index === currentIndex
-                ? 'w-8 bg-white'
-                : 'w-2 bg-white/50 hover:bg-white/75'
-            }`}
-            aria-label={`Ir a video ${index + 1}`}
-          />
-        ))}
-      </div>
+      {/* Indicadores del carrusel (solo si hay más de 1 banner) */}
+      {banners.length > 1 && (
+        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-20 flex gap-2">
+          {banners.map((_, index) => (
+            <button
+              key={index}
+              onClick={() => setCurrentIndex(index)}
+              className={`h-2 rounded-full transition-all ${
+                index === currentIndex
+                  ? 'w-8 bg-white'
+                  : 'w-2 bg-white/50 hover:bg-white/75'
+              }`}
+              aria-label={`Ir a banner ${index + 1}`}
+            />
+          ))}
+        </div>
+      )}
     </section>
   )
 }

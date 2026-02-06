@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { isCloudStorageEnabled, getStorageBaseUrl } from '@/lib/storage'
-import { isCloudinaryEnabled } from '@/lib/cloudinary'
+import { isCloudinaryEnabled } from '@/lib/cloudinary-urls'
 
 export const dynamic = 'force-dynamic'
 

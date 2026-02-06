@@ -60,6 +60,10 @@ model User {
   professionalId String   @unique
   role           String   @default("PROFESSIONAL") // "PROFESSIONAL" | "ADMIN"
 
+  // Recuperación de contraseña
+  passwordResetToken   String?   @unique
+  passwordResetExpires DateTime?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -67,6 +71,7 @@ model User {
   createdChangeRequests ChangeRequest[]  @relation("ChangeRequestCreatedBy")
   votes               ChangeRequestVote[]
   auditLogs           AuditLog[]
+  uploadedBanners     Banner[]
 
   @@map("users")
 }
@@ -317,4 +322,34 @@ model AuditLog {
   @@index([userId, createdAt])
   @@index([entity, entityId])
   @@map("audit_logs")
+}
+
+// Banners del carrusel principal
+model Banner {
+  id          String   @id @default(cuid())
+  title       String?  // Título opcional para referencia interna
+  mediaType   String   // "image" | "video"
+  url         String   // URL del archivo (B2 o local)
+  storageKey  String?  // Key en storage para poder eliminarlo
+  provider    String   @default("local") // "local" | "b2"
+  
+  // Tamaño del archivo en bytes (para control de costos)
+  fileSize    Int      @default(0)
+  
+  // Orden de aparición en el carrusel (menor = primero)
+  order       Int      @default(0)
+  
+  // Estado del banner
+  isActive    Boolean  @default(true)
+  
+  // Quién subió el banner
+  uploadedById String
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  uploadedBy  User     @relation(fields: [uploadedById], references: [id], onDelete: Cascade)
+
+  @@index([isActive, order])
+  @@map("banners")
 }

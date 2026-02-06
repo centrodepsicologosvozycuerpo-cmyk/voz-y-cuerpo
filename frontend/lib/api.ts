@@ -82,3 +82,32 @@ export async function fetchAppointmentById(id: string) {
   return res.json()
 }
 
+export interface Banner {
+  id: string
+  title: string | null
+  mediaType: 'image' | 'video'
+  url: string
+  urls: {
+    original: string
+    hero?: string
+  }
+  order: number
+}
+
+export async function fetchBanners(): Promise<Banner[]> {
+  try {
+    const res = await fetch(`${API_URL}/api/banners`, {
+      cache: 'no-store',
+    })
+    if (!res.ok) {
+      console.error('Failed to fetch banners:', res.status)
+      return []
+    }
+    const data = await res.json()
+    return data.banners || []
+  } catch (error) {
+    console.error('Error fetching banners:', error)
+    return []
+  }
+}
+
