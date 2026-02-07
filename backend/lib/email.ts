@@ -1,29 +1,36 @@
 /**
- * Servicio de envío de emails con Gmail
- * 
- * Para usar Gmail necesitás:
- * 1. Habilitar "Acceso de apps menos seguras" O
- * 2. Crear una "Contraseña de aplicación" (recomendado)
- *    - Ir a https://myaccount.google.com/apppasswords
- *    - Generar una contraseña para "Correo" en "Otra aplicación"
+ * Servicio de envío de emails (Nodemailer + SMTPS).
+ *
+ * Variables de entorno (en .env o en Render → Environment Variables):
+ * - EMAIL_HOST     (default: smtp.gmail.com)
+ * - EMAIL_PORT     (default: 465 — usar 465 y SMTPS en Render)
+ * - EMAIL_SECURE   (default: true cuando port es 465)
+ * - EMAIL_USER     (ej. tu@gmail.com)
+ * - EMAIL_PASSWORD (contraseña de aplicación de Gmail: myaccount.google.com/apppasswords)
+ * - EMAIL_FROM     (opcional; si no está, se usa EMAIL_USER)
+ *
+ * En Render: configurar esas variables en el dashboard del servicio. Puerto 465 + secure: true (SMTPS).
  */
 
 import nodemailer from 'nodemailer'
 import type { Transporter } from 'nodemailer'
 
-// Configuración desde variables de entorno
+// Mapeo de variables de este proyecto → opciones de nodemailer
+const port = parseInt(process.env.EMAIL_PORT || '465', 10)
+const secure = process.env.EMAIL_SECURE !== 'false' && port === 465
+
 const EMAIL_CONFIG = {
   host: process.env.EMAIL_HOST || 'smtp.gmail.com',
-  port: parseInt(process.env.EMAIL_PORT || '587'),
-  secure: process.env.EMAIL_SECURE === 'true', // true para 465, false para otros
+  port,
+  secure, // true para 465 (SMTPS) — necesario en Render
   user: process.env.EMAIL_USER || '',
-  password: process.env.EMAIL_PASSWORD || '', // Contraseña de aplicación de Gmail
+  password: process.env.EMAIL_PASSWORD || '',
   from: process.env.EMAIL_FROM || '',
 }
 
 const EMAIL_ENABLED = !!(EMAIL_CONFIG.user && EMAIL_CONFIG.password)
 
-// Crear transporter de nodemailer
+// Transporter creado una vez a nivel de módulo
 let transporter: Transporter | null = null
 
 if (EMAIL_ENABLED) {
@@ -35,8 +42,10 @@ if (EMAIL_ENABLED) {
       user: EMAIL_CONFIG.user,
       pass: EMAIL_CONFIG.password,
     },
+    connectionTimeout: 10000,
+    greetingTimeout: 10000,
   })
-  console.log('✅ Email service enabled (Gmail)')
+  console.log('✅ Email service enabled (SMTPS)', { host: EMAIL_CONFIG.host, port: EMAIL_CONFIG.port, secure: EMAIL_CONFIG.secure })
 } else {
   console.log('ℹ️  Email service not configured - using mock')
 }

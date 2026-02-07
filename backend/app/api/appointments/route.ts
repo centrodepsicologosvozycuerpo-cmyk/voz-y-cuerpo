@@ -141,8 +141,11 @@ export async function POST(request: Request) {
       },
     })
 
-    // Enviar notificaciones
-    await sendBookingRequestNotifications(appointment)
+    // Enviar notificaciones en segundo plano (no bloquear la respuesta)
+    // En Render el SMTP suele hacer timeout; el turno ya quedó creado
+    sendBookingRequestNotifications(appointment).catch((err) => {
+      console.error('Notificaciones en segundo plano:', err)
+    })
 
     return NextResponse.json({
       id: appointment.id,
