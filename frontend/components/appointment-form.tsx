@@ -17,6 +17,16 @@ export function AppointmentForm({ professionalId, startAt, modality }: Appointme
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [clientName, setClientName] = useState('')
+  const [clientEmail, setClientEmail] = useState('')
+  const [clientPhone, setClientPhone] = useState('')
+  const [acceptPolicies, setAcceptPolicies] = useState(false)
+
+  const isFormValid =
+    clientName.trim().length > 0 &&
+    clientEmail.trim().length > 0 &&
+    clientPhone.trim().length > 0 &&
+    acceptPolicies
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -38,9 +48,7 @@ export function AppointmentForm({ professionalId, startAt, modality }: Appointme
     console.log('Datos a enviar:', data)
 
     try {
-      const API_URL = 'http://localhost:3002'
-      console.log('Haciendo fetch a:', `${API_URL}/api/appointments`)
-      
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002'
       const response = await fetch(`${API_URL}/api/appointments`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -85,6 +93,8 @@ export function AppointmentForm({ professionalId, startAt, modality }: Appointme
               name="clientName"
               required
               placeholder="Tu nombre completo"
+              value={clientName}
+              onChange={(e) => setClientName(e.target.value)}
             />
           </div>
 
@@ -96,6 +106,8 @@ export function AppointmentForm({ professionalId, startAt, modality }: Appointme
               type="email"
               required
               placeholder="tu@email.com"
+              value={clientEmail}
+              onChange={(e) => setClientEmail(e.target.value)}
             />
           </div>
 
@@ -107,6 +119,8 @@ export function AppointmentForm({ professionalId, startAt, modality }: Appointme
               type="tel"
               required
               placeholder="+54 11 0000-0000"
+              value={clientPhone}
+              onChange={(e) => setClientPhone(e.target.value)}
             />
           </div>
 
@@ -116,6 +130,8 @@ export function AppointmentForm({ professionalId, startAt, modality }: Appointme
               id="acceptPolicies"
               name="acceptPolicies"
               required
+              checked={acceptPolicies}
+              onChange={(e) => setAcceptPolicies(e.target.checked)}
               className="mt-1"
             />
             <Label htmlFor="acceptPolicies" className="text-sm">
@@ -127,7 +143,7 @@ export function AppointmentForm({ professionalId, startAt, modality }: Appointme
             </Label>
           </div>
 
-          <Button type="submit" className="w-full" disabled={loading}>
+          <Button type="submit" className="w-full" disabled={!isFormValid || loading}>
             {loading ? 'Confirmando...' : 'Confirmar Reserva'}
           </Button>
         </form>
