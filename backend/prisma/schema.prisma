@@ -324,6 +324,15 @@ model AuditLog {
   @@map("audit_logs")
 }
 
+// Configuración global del sitio (una sola fila)
+model SiteConfig {
+  id                   String   @id @default("default")
+  consultationFeePesos Int?     // Honorarios de consulta en pesos argentinos (igual para todos)
+  updatedAt            DateTime @updatedAt
+
+  @@map("site_config")
+}
+
 // Banners del carrusel principal
 model Banner {
   id          String   @id @default(cuid())

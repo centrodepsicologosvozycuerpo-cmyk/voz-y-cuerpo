@@ -20,7 +20,8 @@ import {
   AlertCircle,
   Lock,
   X,
-  Settings
+  Settings,
+  DollarSign
 } from 'lucide-react'
 
 interface Banner {
@@ -66,6 +67,11 @@ export function ConfigTab() {
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
+  // Estado de Honorarios
+  const [consultationFeePesos, setConsultationFeePesos] = useState<number | ''>('')
+  const [loadingConfig, setLoadingConfig] = useState(true)
+  const [savingFee, setSavingFee] = useState(false)
+
   // Estado de Contraseña
   const [showChangePassword, setShowChangePassword] = useState(false)
   const [changingPassword, setChangingPassword] = useState(false)
@@ -102,6 +108,66 @@ export function ConfigTab() {
   useEffect(() => {
     fetchBanners()
   }, [])
+
+  const fetchConfig = async () => {
+    try {
+      const res = await fetch(`${API_URL}/api/panel/config`, {
+        headers: getAuthHeaders(),
+      })
+      if (!res.ok) throw new Error('Error al cargar configuración')
+      const data = await res.json()
+      setConsultationFeePesos(data.consultationFeePesos ?? '')
+    } catch (error) {
+      console.error('Error fetching config:', error)
+      toast({
+        title: 'Error',
+        description: 'No se pudo cargar la configuración de honorarios',
+        variant: 'destructive',
+      })
+    } finally {
+      setLoadingConfig(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchConfig()
+  }, [])
+
+  const handleSaveFee = async () => {
+    const value = consultationFeePesos === '' ? null : Number(consultationFeePesos)
+    if (value !== null && (value < 0 || !Number.isInteger(value))) {
+      toast({
+        title: 'Valor inválido',
+        description: 'Los honorarios deben ser un número entero mayor o igual a 0 (pesos argentinos).',
+        variant: 'destructive',
+      })
+      return
+    }
+    setSavingFee(true)
+    try {
+      const res = await fetch(`${API_URL}/api/panel/config`, {
+        method: 'PUT',
+        headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
+        body: JSON.stringify({ consultationFeePesos: value }),
+      })
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error || 'Error al guardar')
+      }
+      toast({
+        title: 'Honorarios actualizados',
+        description: 'El valor se mostrará en el sitio y en la FAQ.',
+      })
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message || 'No se pudieron guardar los honorarios',
+        variant: 'destructive',
+      })
+    } finally {
+      setSavingFee(false)
+    }
+  }
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -364,6 +430,64 @@ export function ConfigTab() {
         <Settings className="h-6 w-6" />
         <h2 className="text-2xl font-bold">Configuración</h2>
       </div>
+
+      {/* ===================== */}
+      {/* HONORARIOS DE CONSULTA */}
+      {/* ===================== */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <DollarSign className="h-5 w-5" />
+            Honorarios de consulta
+          </CardTitle>
+          <CardDescription>
+            Monto en pesos argentinos (ARS). Es el mismo para todos los profesionales y se muestra en el perfil y en la FAQ.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {loadingConfig ? (
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Cargando...
+            </div>
+          ) : (
+            <div className="flex flex-col sm:flex-row gap-4 max-w-md">
+              <div className="flex-1">
+                <Label htmlFor="consultationFeePesos">Monto por sesión (ARS)</Label>
+                <Input
+                  id="consultationFeePesos"
+                  type="number"
+                  min={0}
+                  step={1}
+                  placeholder="Ej: 15000"
+                  value={consultationFeePesos === '' ? '' : consultationFeePesos}
+                  onChange={(e) => {
+                    const v = e.target.value
+                    if (v === '') setConsultationFeePesos('')
+                    else {
+                      const n = parseInt(v, 10)
+                      if (!Number.isNaN(n) && n >= 0) setConsultationFeePesos(n)
+                    }
+                  }}
+                  disabled={savingFee}
+                />
+              </div>
+              <div className="flex items-end">
+                <Button onClick={handleSaveFee} disabled={savingFee}>
+                  {savingFee ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Guardando...
+                    </>
+                  ) : (
+                    'Guardar'
+                  )}
+                </Button>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* ===================== */}
       {/* CAMBIO DE CONTRASEÑA */}

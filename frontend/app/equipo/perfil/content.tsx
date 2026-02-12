@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Chip } from '@/components/ui/chip'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
-import { Calendar, Languages, Loader2 } from 'lucide-react'
+import { Calendar, Languages, Loader2, DollarSign } from 'lucide-react'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002'
 
@@ -30,6 +30,7 @@ export function ProfessionalProfileContent() {
   const slug = searchParams.get('slug')
   
   const [professional, setProfessional] = useState<Professional | null>(null)
+  const [consultationFeePesos, setConsultationFeePesos] = useState<number | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -40,18 +41,21 @@ export function ProfessionalProfileContent() {
       return
     }
     
-    fetch(`${API_URL}/api/professionals`)
-      .then(res => {
+    Promise.all([
+      fetch(`${API_URL}/api/professionals`).then(res => {
         if (!res.ok) throw new Error('Error al cargar profesional')
         return res.json()
-      })
-      .then(data => {
+      }),
+      fetch(`${API_URL}/api/config`).then(res => res.ok ? res.json() : { consultationFeePesos: null }),
+    ])
+      .then(([data, config]) => {
         const prof = data.find((p: Professional) => p.slug === slug)
         if (!prof || !prof.isActive) {
           setError('Profesional no encontrado')
         } else {
           setProfessional(prof)
         }
+        setConsultationFeePesos(config?.consultationFeePesos ?? null)
       })
       .catch(err => setError(err.message))
       .finally(() => setLoading(false))
@@ -159,6 +163,26 @@ export function ProfessionalProfileContent() {
                   </div>
                 </div>
               )}
+
+              <div>
+                <h3 className="font-semibold mb-3 flex items-center gap-2">
+                  <DollarSign className="h-4 w-4" />
+                  Honorarios
+                </h3>
+                <p className="text-muted-foreground">
+                  {consultationFeePesos != null && consultationFeePesos > 0 ? (
+                    <>
+                      La consulta tiene un valor de{' '}
+                      <span className="font-semibold text-foreground">
+                        ${consultationFeePesos.toLocaleString('es-AR')} por sesión
+                      </span>
+                      {' '}(pesos argentinos). Los detalles de pago se coordinan al reservar.
+                    </>
+                  ) : (
+                    'El valor de la consulta se coordina directamente con el profesional al reservar tu turno.'
+                  )}
+                </p>
+              </div>
 
               <div>
                 <h3 className="font-semibold mb-3">Enfoque Terapéutico</h3>
