@@ -30,6 +30,11 @@ export function Footer() {
                 </Link>
               </li>
               <li>
+                <Link href="/notas" className="text-muted-foreground hover:text-foreground">
+                  Notas
+                </Link>
+              </li>
+              <li>
                 <Link href="/turnos" className="text-muted-foreground hover:text-foreground">
                   Reservar Turno
                 </Link>

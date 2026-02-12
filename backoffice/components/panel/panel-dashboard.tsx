@@ -8,6 +8,7 @@ import { ProfessionalsTab } from './professionals-tab'
 import { ChangeRequestsTab } from './change-requests-tab'
 import { PatientsTab } from './patients-tab'
 import { ConfigTab } from './config-tab'
+import { NewsTab } from './news-tab'
 import { LogoutButton } from './logout-button'
 import type { AuthUser } from '@/lib/auth-client'
 
@@ -32,6 +33,7 @@ export function PanelDashboard({ user }: PanelDashboardProps) {
           <TabsTrigger value="appointments">Mis Turnos</TabsTrigger>
           <TabsTrigger value="patients">Pacientes</TabsTrigger>
           <TabsTrigger value="professionals">Mi Perfil</TabsTrigger>
+          <TabsTrigger value="news">Noticias</TabsTrigger>
           <TabsTrigger value="config">Configuración</TabsTrigger>
           <TabsTrigger value="change-requests">Solicitudes</TabsTrigger>
         </TabsList>
@@ -54,6 +56,10 @@ export function PanelDashboard({ user }: PanelDashboardProps) {
 
         <TabsContent value="professionals">
           <ProfessionalsTab professionalId={user.professionalId} />
+        </TabsContent>
+
+        <TabsContent value="news">
+          <NewsTab />
         </TabsContent>
 
         <TabsContent value="config">

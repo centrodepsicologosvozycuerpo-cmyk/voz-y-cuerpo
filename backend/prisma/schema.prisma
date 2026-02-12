@@ -333,6 +333,53 @@ model SiteConfig {
   @@map("site_config")
 }
 
+// Categorías para notas/noticias
+model NewsCategory {
+  id        String    @id @default(cuid())
+  name      String
+  slug      String    @unique
+  order     Int       @default(0)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  newsItems NewsItem[]
+
+  @@index([order])
+  @@map("news_categories")
+}
+
+// Etiquetas para notas/noticias (many-to-many)
+model NewsTag {
+  id        String    @id @default(cuid())
+  name      String    @unique
+  createdAt DateTime  @default(now())
+
+  newsItems NewsItem[]
+
+  @@map("news_tags")
+}
+
+// Noticias / notas (sección pública, todos los profesionales ven todas)
+model NewsItem {
+  id         String   @id @default(cuid())
+  slug       String   @unique
+  title      String
+  summary    String   // Descripción breve para tarjetas
+  content    String   // Contenido completo de la nota
+  order      Int      @default(0)   // Orden de aparición (menor = primero)
+  isActive   Boolean  @default(true)
+  categoryId String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  category NewsCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  tags     NewsTag[]
+
+  @@index([isActive, order])
+  @@index([categoryId])
+  @@map("news_items")
+}
+
 // Banners del carrusel principal
 model Banner {
   id          String   @id @default(cuid())
