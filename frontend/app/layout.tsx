@@ -11,7 +11,7 @@ export default function RootLayout({
   return (
     <html lang="es">
       <head>
-        <title>Equipo de Psicología - Profesionales comprometidos con tu bienestar</title>
+        <title>Voz y Cuerpo - Profesionales comprometidos con tu bienestar</title>
         <meta name="description" content="Equipo de psicólogos especializados en terapia individual, de pareja, familiar y más. Reservá tu turno online." />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />

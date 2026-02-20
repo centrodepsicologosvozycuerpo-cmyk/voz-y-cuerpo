@@ -6,7 +6,7 @@ export function Footer() {
       <div className="container mx-auto px-4 py-8">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
           <div className="text-center md:text-left">
-            <h3 className="font-semibold mb-4">Equipo de Psicología</h3>
+            <h3 className="font-semibold mb-4">Voz y Cuerpo</h3>
             <p className="text-sm text-muted-foreground">
               Profesionales comprometidos con tu bienestar emocional y mental.
             </p>
@@ -58,7 +58,7 @@ export function Footer() {
           </div>
         </div>
         <div className="mt-8 pt-8 border-t text-center text-sm text-muted-foreground">
-          <p>&copy; {new Date().getFullYear()} Equipo de Psicología. Todos los derechos reservados.</p>
+          <p>&copy; {new Date().getFullYear()} Voz y Cuerpo. Todos los derechos reservados.</p>
         </div>
       </div>
     </footer>

@@ -6,7 +6,7 @@ import { randomBytes } from 'crypto'
 export const dynamic = 'force-dynamic'
 
 const BACKOFFICE_URL = process.env.NEXT_PUBLIC_BACKOFFICE_URL || 'http://localhost:3001'
-const CLINIC_NAME = process.env.CLINIC_NAME || 'Consultorio de Psicología'
+const CLINIC_NAME = 'Voz y Cuerpo'
 
 // CORS headers
 const corsHeaders = {

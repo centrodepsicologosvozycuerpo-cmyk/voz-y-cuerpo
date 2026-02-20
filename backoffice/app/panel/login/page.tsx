@@ -215,16 +215,6 @@ export default function LoginPage() {
                 ¿Olvidaste tu contraseña?
               </button>
             </div>
-
-            <div className="mt-6 p-4 bg-muted rounded-md">
-              <p className="text-sm font-semibold mb-2">Credenciales demo:</p>
-              <p className="text-xs text-muted-foreground">
-                Email: nombre1@dominio.com (o nombre2, nombre3, nombre4)
-              </p>
-              <p className="text-xs text-muted-foreground">
-                Password: Demo1234!
-              </p>
-            </div>
           </CardContent>
         </Card>
       </div>

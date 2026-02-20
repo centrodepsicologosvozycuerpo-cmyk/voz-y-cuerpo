@@ -7,7 +7,7 @@ export function Header() {
       <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
           <Link href="/" className="text-2xl font-bold text-primary">
-            Equipo de Psicología
+            Voz y Cuerpo
           </Link>
           <nav className="hidden md:flex items-center gap-6">
             <Link href="/" className="text-sm font-medium hover:text-primary transition-colors">

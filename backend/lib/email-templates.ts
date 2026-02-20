@@ -5,7 +5,7 @@
 import { format } from 'date-fns'
 import es from 'date-fns/locale/es'
 
-const CLINIC_NAME = process.env.CLINIC_NAME || 'Consultorio de Psicología'
+const CLINIC_NAME = 'Voz y Cuerpo'
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
 
 // Estilos base
