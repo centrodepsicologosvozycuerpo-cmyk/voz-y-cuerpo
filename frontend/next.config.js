@@ -3,8 +3,8 @@ const nextConfig = {
   // Exportar como sitio estático
   output: 'export',
   
-  // Trailing slash para mejor compatibilidad con hosting estático
-  trailingSlash: true,
+  // URLs sin barra final para evitar redirecciones (mejor para indexación en Google)
+  trailingSlash: false,
   
   // Desactivar optimización de imágenes (no disponible en static)
   images: {

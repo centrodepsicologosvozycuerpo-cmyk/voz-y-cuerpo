@@ -1,8 +1,8 @@
 import { FAQContent } from './faq-content'
 
 export const metadata = {
-  title: 'Preguntas Frecuentes - FAQ',
-  description: 'Respuestas a las preguntas más frecuentes sobre nuestros servicios y proceso de terapia.',
+  title: 'Preguntas Frecuentes - Voz y Cuerpo',
+  description: 'Respuestas a las preguntas más frecuentes sobre los servicios y el proceso de terapia de Voz y Cuerpo.',
 }
 
 export default function FAQPage() {

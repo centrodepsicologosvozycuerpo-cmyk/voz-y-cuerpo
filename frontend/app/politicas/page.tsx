@@ -1,8 +1,8 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
 export const metadata = {
-  title: 'Políticas de Privacidad',
-  description: 'Políticas de privacidad y protección de datos personales.',
+  title: 'Políticas de Privacidad - Voz y Cuerpo',
+  description: 'Políticas de privacidad y protección de datos personales de Voz y Cuerpo.',
 }
 
 export default function PoliticasPage() {

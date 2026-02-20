@@ -4,8 +4,8 @@ import Link from 'next/link'
 import { Users, Heart, Baby, MessageCircle } from 'lucide-react'
 
 export const metadata = {
-  title: 'Nuestros Servicios - Modalidades de Terapia',
-  description: 'Conocé los diferentes servicios y modalidades de terapia que ofrecemos.',
+  title: 'Nuestros Servicios - Voz y Cuerpo',
+  description: 'Conocé los servicios y modalidades de terapia de Voz y Cuerpo: individual, pareja, familiar.',
 }
 
 export default function ServiciosPage() {

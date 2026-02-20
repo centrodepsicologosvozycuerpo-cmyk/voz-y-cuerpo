@@ -5,6 +5,11 @@ import { ArrowRight, Heart, Users, Clock, Shield } from 'lucide-react'
 import { redirect } from 'next/navigation'
 import { HeroCarousel } from '@/components/hero-carousel'
 
+export const metadata = {
+  title: 'Inicio - Voz y Cuerpo',
+  description: 'Voz y Cuerpo. Tu bienestar emocional es nuestra prioridad. Conocé a nuestro equipo y reservá tu turno online.',
+}
+
 export default function HomePage() {
   return (
     <div className="flex flex-col">
