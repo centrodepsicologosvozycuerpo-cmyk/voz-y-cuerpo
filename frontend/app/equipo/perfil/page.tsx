@@ -1,6 +1,11 @@
 import { Suspense } from 'react'
 import { ProfessionalProfileContent } from './content'
 import { Loader2 } from 'lucide-react'
+import { getSeoCanonical } from '@/lib/seo'
+
+export const metadata = {
+  ...getSeoCanonical('/equipo/perfil'),
+}
 
 function Loading() {
   return (

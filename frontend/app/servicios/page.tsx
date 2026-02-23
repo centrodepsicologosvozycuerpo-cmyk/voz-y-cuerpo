@@ -2,10 +2,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 import { Users, Heart, Baby, MessageCircle } from 'lucide-react'
+import { getSeoCanonical } from '@/lib/seo'
 
 export const metadata = {
   title: 'Nuestros Servicios - Voz y Cuerpo',
   description: 'Conocé los servicios y modalidades de terapia de Voz y Cuerpo: individual, pareja, familiar.',
+  ...getSeoCanonical('/servicios'),
 }
 
 export default function ServiciosPage() {

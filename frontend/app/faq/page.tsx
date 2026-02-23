@@ -1,8 +1,10 @@
 import { FAQContent } from './faq-content'
+import { getSeoCanonical } from '@/lib/seo'
 
 export const metadata = {
   title: 'Preguntas Frecuentes - Voz y Cuerpo',
   description: 'Respuestas a las preguntas más frecuentes sobre los servicios y el proceso de terapia de Voz y Cuerpo.',
+  ...getSeoCanonical('/faq'),
 }
 
 export default function FAQPage() {

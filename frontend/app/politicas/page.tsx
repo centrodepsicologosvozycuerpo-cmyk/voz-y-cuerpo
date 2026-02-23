@@ -1,8 +1,10 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { getSeoCanonical } from '@/lib/seo'
 
 export const metadata = {
   title: 'Políticas de Privacidad - Voz y Cuerpo',
   description: 'Políticas de privacidad y protección de datos personales de Voz y Cuerpo.',
+  ...getSeoCanonical('/politicas'),
 }
 
 export default function PoliticasPage() {

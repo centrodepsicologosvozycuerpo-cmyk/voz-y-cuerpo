@@ -2,12 +2,13 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { ArrowRight, Heart, Users, Clock, Shield } from 'lucide-react'
-import { redirect } from 'next/navigation'
 import { HeroCarousel } from '@/components/hero-carousel'
+import { getSeoCanonical } from '@/lib/seo'
 
 export const metadata = {
   title: 'Inicio - Voz y Cuerpo',
   description: 'Voz y Cuerpo. Tu bienestar emocional es nuestra prioridad. Conocé a nuestro equipo y reservá tu turno online.',
+  ...getSeoCanonical('/'),
 }
 
 export default function HomePage() {

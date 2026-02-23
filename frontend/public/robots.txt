@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://centrodepsicologos.com.ar/sitemap.xml
+Sitemap: https://www.centrodepsicologos.com.ar/sitemap.xml

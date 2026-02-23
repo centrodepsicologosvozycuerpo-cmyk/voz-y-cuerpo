@@ -1,6 +1,11 @@
 import { Suspense } from 'react'
 import { TurnoExitoContent } from './content'
 import { Loader2 } from 'lucide-react'
+import { getSeoCanonical } from '@/lib/seo'
+
+export const metadata = {
+  ...getSeoCanonical('/turnos/exito'),
+}
 
 function Loading() {
   return (

@@ -3,8 +3,9 @@ import { LayoutWrapper } from "@/components/layout/layout-wrapper"
 import { Providers } from "./providers"
 import { ErrorHandler } from "./error-handler"
 import type { Metadata } from "next"
+import { CANONICAL_BASE } from "@/lib/seo"
 
-const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://centrodepsicologos.com.ar"
+const baseUrl = process.env.NEXT_PUBLIC_APP_URL || CANONICAL_BASE
 
 export const metadata: Metadata = {
   metadataBase: new URL(baseUrl),
