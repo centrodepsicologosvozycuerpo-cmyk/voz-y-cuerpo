@@ -71,14 +71,18 @@ export function patientPreConfirmationEmail(data: {
   patientName: string
   professionalName: string
   professionalPhone?: string
+  professionalEmail?: string
   appointmentDate: Date
   modality: string
   locationLabel?: string
   cancelUrl: string
 }): { subject: string; html: string } {
-  
-  const whatsappUrl = data.professionalPhone 
-    ? `https://wa.me/${data.professionalPhone.replace(/[^0-9]/g, '')}`
+
+  const honorariosSubject = encodeURIComponent(
+    `Consulta sobre honorarios - Turno ${format(data.appointmentDate, 'dd/MM/yyyy', { locale: es })}`
+  )
+  const mailtoUrl = data.professionalEmail
+    ? `mailto:${data.professionalEmail}?subject=${honorariosSubject}`
     : null
 
   const content = `
@@ -110,13 +114,14 @@ export function patientPreConfirmationEmail(data: {
       </p>
     </div>
     
-    <p style="text-align: center; margin: 24px 0; font-size: 14px; color: #666;">
-      ¿Querés coordinar algo antes? Contactá al profesional:
+    <p style="margin: 24px 0 12px 0; font-size: 14px; color: #444; line-height: 1.5;">
+      El pago de los honorarios se coordina directamente con el profesional. Le invitamos a contactarlo por correo electrónico.
     </p>
-    
+    ${mailtoUrl ? `
     <div style="text-align: center; margin-bottom: 24px;">
-      ${whatsappUrl ? `<a href="${whatsappUrl}" style="${styles.button} ${styles.buttonWhatsapp}">💬 Abrir WhatsApp</a>` : ''}
+      <a href="${mailtoUrl}" style="${styles.button} ${styles.buttonPrimary}">✉️ Contactar por correo para coordinar el pago de honorarios</a>
     </div>
+    ` : ''}
     
     <hr style="${styles.divider}">
     
@@ -142,15 +147,12 @@ export function patientConfirmationEmail(data: {
   patientName: string
   professionalName: string
   professionalPhone?: string
+  professionalEmail?: string
   appointmentDate: Date
   modality: string
   locationLabel?: string
   cancelUrl: string
 }): { subject: string; html: string } {
-
-  const whatsappUrl = data.professionalPhone 
-    ? `https://wa.me/${data.professionalPhone.replace(/[^0-9]/g, '')}`
-    : null
 
   const content = `
     <h1 style="${styles.title}">✓ Turno Confirmado</h1>
@@ -179,15 +181,6 @@ export function patientConfirmationEmail(data: {
         <strong>✓ Confirmado</strong> — Te esperamos en la fecha y hora indicadas.
       </p>
     </div>
-    
-    ${whatsappUrl ? `
-      <p style="text-align: center; margin: 24px 0; font-size: 14px; color: #666;">
-        ¿Tenés alguna consulta?
-      </p>
-      <div style="text-align: center; margin-bottom: 24px;">
-        <a href="${whatsappUrl}" style="${styles.button} ${styles.buttonWhatsapp}">💬 Contactar por WhatsApp</a>
-      </div>
-    ` : ''}
     
     <hr style="${styles.divider}">
     

@@ -22,17 +22,20 @@ const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
 export async function sendPreConfirmationEmail(appointment: Appointment) {
   const professional = await prisma.professional.findUnique({
     where: { id: appointment.professionalId },
+    include: { user: { select: { email: true } } },
   })
 
   if (!professional) return
 
   const localStart = utcToZonedTime(appointment.startAt, TIMEZONE)
   const cancelUrl = `${APP_URL}/turnos/cancelar?token=${appointment.cancelToken}`
+  const professionalEmail = professional.contactEmail || professional.user?.email || undefined
 
   const { subject, html } = patientPreConfirmationEmail({
     patientName: appointment.clientName,
     professionalName: professional.fullName,
     professionalPhone: professional.whatsappPhone || undefined,
+    professionalEmail,
     appointmentDate: localStart,
     modality: appointment.modality,
     locationLabel: appointment.locationLabel || undefined,
@@ -61,17 +64,20 @@ export async function sendPreConfirmationEmail(appointment: Appointment) {
 export async function sendConfirmationEmail(appointment: Appointment) {
   const professional = await prisma.professional.findUnique({
     where: { id: appointment.professionalId },
+    include: { user: { select: { email: true } } },
   })
 
   if (!professional) return
 
   const localStart = utcToZonedTime(appointment.startAt, TIMEZONE)
   const cancelUrl = `${APP_URL}/turnos/cancelar?token=${appointment.cancelToken}`
+  const professionalEmail = professional.contactEmail || professional.user?.email || undefined
 
   const { subject, html } = patientConfirmationEmail({
     patientName: appointment.clientName,
     professionalName: professional.fullName,
     professionalPhone: professional.whatsappPhone || undefined,
+    professionalEmail,
     appointmentDate: localStart,
     modality: appointment.modality,
     locationLabel: appointment.locationLabel || undefined,

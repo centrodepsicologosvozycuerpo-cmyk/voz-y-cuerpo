@@ -19,7 +19,7 @@ export async function POST(
       where: { id: params.id },
       include: {
         patient: true,
-        professional: true,
+        professional: { include: { user: { select: { email: true } } } },
       },
     })
 
@@ -88,10 +88,12 @@ export async function POST(
       const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
       const cancelUrl = `${APP_URL}/turnos/cancelar/?token=${cancelToken}`
 
+      const professionalEmail = hold.professional.contactEmail || hold.professional.user?.email || undefined
       const emailData = patientConfirmationEmail({
         patientName: hold.patient.firstName,
         professionalName: hold.professional.fullName,
         professionalPhone: hold.professional.whatsappPhone || undefined,
+        professionalEmail,
         appointmentDate: hold.startAt,
         modality: 'presencial',
         cancelUrl,

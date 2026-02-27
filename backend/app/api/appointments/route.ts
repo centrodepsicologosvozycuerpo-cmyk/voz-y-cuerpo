@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
 import { getAvailableSlots } from '@/lib/availability'
-import { parseISO, isAfter } from 'date-fns'
+import { parseISO, isAfter, addDays, startOfDay } from 'date-fns'
 import { utcToZonedTime } from 'date-fns-tz'
 import { generateToken } from '@/lib/utils'
 import { sendBookingRequestNotifications } from '@/lib/notifications'
@@ -54,6 +54,15 @@ export async function POST(request: Request) {
     if (!isAfter(slotStart, now)) {
       return NextResponse.json(
         { error: 'No se puede reservar un turno en el pasado' },
+        { status: 400 }
+      )
+    }
+
+    // Solo reservas públicas: mínimo pasado mañana (dar tiempo al profesional a confirmar). El panel crea via /api/holds y convert, sin esta restricción.
+    const minBookableDate = startOfDay(addDays(now, 2))
+    if (slotStart < minBookableDate) {
+      return NextResponse.json(
+        { error: 'Los turnos solo pueden reservarse a partir de pasado mañana' },
         { status: 400 }
       )
     }

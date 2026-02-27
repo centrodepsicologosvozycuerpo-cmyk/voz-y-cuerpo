@@ -57,6 +57,8 @@ export async function GET(
             title: true,
             photo: true,
             whatsappPhone: true,
+            contactEmail: true,
+            user: { select: { email: true } },
           },
         },
       },
@@ -73,10 +75,23 @@ export async function GET(
       )
     }
 
-    // Asegurar que el status se devuelva correctamente
+    const prof = appointment.professional as typeof appointment.professional & { user?: { email: string } }
+    const professionalEmail = prof?.contactEmail || prof?.user?.email || null
+
     const response = {
       ...appointment,
       status: appointment.status || 'PENDING_CONFIRMATION',
+      professional: prof
+        ? {
+            id: prof.id,
+            slug: prof.slug,
+            fullName: prof.fullName,
+            title: prof.title,
+            photo: prof.photo,
+            whatsappPhone: prof.whatsappPhone,
+            email: professionalEmail,
+          }
+        : appointment.professional,
     }
 
     // Debug log (solo en desarrollo)

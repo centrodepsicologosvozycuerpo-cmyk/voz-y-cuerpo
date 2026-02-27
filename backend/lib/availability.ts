@@ -27,11 +27,13 @@ function extendRangeIfNeeded(
   return end
 }
 
+/** Opciones para getAvailableSlots. allowSameDay: true = panel/BO (puede reservar hoy); false = público (mínimo pasado mañana). */
 export async function getAvailableSlots(
   professionalId: string,
   from: Date,
   to: Date,
-  modality?: string
+  modality?: string,
+  options?: { allowSameDay?: boolean }
 ): Promise<AvailableSlot[]> {
   try {
     const professional = await prisma.professional.findUnique({
@@ -79,9 +81,18 @@ export async function getAvailableSlots(
     const currentDate = startOfDay(fromLocal)
     const endDate = startOfDay(toLocal)
 
+    // Solo para reservas públicas: mínimo pasado mañana (dar tiempo al profesional a confirmar). Panel/BO puede desde hoy.
+    const effectiveStart =
+      options?.allowSameDay === true
+        ? currentDate
+        : (() => {
+            const minBookableDate = startOfDay(addDays(now, 2))
+            return currentDate < minBookableDate ? minBookableDate : currentDate
+          })()
+
     // Iterar por cada día en el rango
     // IMPORTANTE: Usar fechas locales directamente, sin convertir de nuevo
-    let date = new Date(currentDate)
+    let date = new Date(effectiveStart)
     while (date <= endDate) {
       // date ya está en zona local (calculado desde fromLocal)
       const localDate = new Date(date)
